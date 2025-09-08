@@ -8,74 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
+import useSigninForm from "@/features/auth/hooks/useSignupForm";
+
 export default function AdminSignup() {
-  const [formData, setFormData] = useState<any>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    organizationName: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<any>({});
-
-  const handleInputChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormData((prev: any) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: any = {};
-    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Please enter a valid email";
-
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
-    else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain uppercase, lowercase, and number";
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (!formData.organizationName.trim())
-      newErrors.organizationName = "Organization name is required";
-
-    return newErrors;
-  };
-
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      alert("Account created successfully! Please check your email for verification.");
-    } catch {
-      alert("Failed to create account. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    showPassword,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    setShowConfirmPassword,
+    setShowPassword,
+    showConfirmPassword,
+    formData,
+    errors,
+  } = useSigninForm();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -145,9 +91,9 @@ export default function AdminSignup() {
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
-                  name="email"
+                  name="emailAddress"
                   type="email"
-                  value={formData.email}
+                  value={formData.emailAddress}
                   onChange={handleInputChange}
                   placeholder="john.doe@clinic.com"
                   className={errors.email ? "border-red-500 bg-red-50" : ""}

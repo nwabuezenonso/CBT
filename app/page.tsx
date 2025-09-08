@@ -62,10 +62,10 @@ const CBTLandingPage = () => {
       {/* Hero Section */}
       <main className="relative z-10 px-6 py-10">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center">
+          <div className="text-center space-y-10">
             <h1 className="text-6xl md:text-7xl font-bold text-black leading-tight">
               TEST-Gen
-              <span className="block  bg-clip-text text-transparent">CBT Platform</span>
+              {/* <span className="block  bg-clip-text ">CBT Platform</span> */}
             </h1>
             <p className="text-xl text-black/80 mb-8 max-w-2xl mx-auto leading-relaxed">
               Experience the future of computer-based testing with our advanced, secure, and
