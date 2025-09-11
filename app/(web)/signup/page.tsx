@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
-import useSigninForm from "@/features/auth/hooks/useSignupForm";
+import useSignupForm from "@/features/auth/hooks/useSignupForm";
 
 export default function AdminSignup() {
   const {
@@ -21,7 +21,7 @@ export default function AdminSignup() {
     showConfirmPassword,
     formData,
     errors,
-  } = useSigninForm();
+  } = useSignupForm();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">

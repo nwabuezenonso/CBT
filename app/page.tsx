@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import React, { useState } from "react";
 import {
   GraduationCap,
@@ -91,10 +93,13 @@ const CBTLandingPage = () => {
                   Manage examinations, create questions, monitor sessions, and generate
                   comprehensive reports.
                 </p>
-                <div className="flex items-center text-cyan-300 font-semibold group-hover:text-cyan-200 transition-colors">
-                  Access Admin Panel
-                  <ArrowRight className="w-5 h-5 ml-2 transform group-hover:translate-x-2 transition-transform duration-300" />
-                </div>
+
+                <Link href="/signin">
+                  <div className="flex items-center text-cyan-300 font-semibold group-hover:text-cyan-200 transition-colors">
+                    Access Admin Panel
+                    <ArrowRight className="w-5 h-5 ml-2 transform group-hover:translate-x-2 transition-transform duration-300" />
+                  </div>
+                </Link>
               </div>
               <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-blue-500/10 to-transparent rounded-full transform translate-x-8 translate-y-8"></div>
             </div>
