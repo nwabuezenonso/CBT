@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import useSigninForm from "@/features/auth/hooks/useSigninForm";
+import Link from "next/link";
 export default function AdminSignin() {
- 
   const {
     handleSubmit,
     formData,
@@ -19,7 +19,7 @@ export default function AdminSignin() {
     showPassword,
     setShowPassword,
     isLoading,
-  } = useSigninForm()
+  } = useSigninForm();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -132,9 +132,12 @@ export default function AdminSignin() {
               {/* Signup */}
               <div className="text-center flex flex-col">
                 <span className="text-gray-600">Don't have an account? </span>
-                <Button variant="link" className="text-blue-600 font-medium">
-                  Create admin account
-                </Button>
+
+                <Link href="/signup">
+                  <Button type="button" variant="link" className="text-blue-600 font-medium">
+                    Create admin account
+                  </Button>
+                </Link>
               </div>
             </form>
           </CardContent>

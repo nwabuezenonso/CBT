@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 const useSignupForm = () => {
   const [formData, setFormData] = useState<any>({
     firstName: "",
@@ -12,6 +14,7 @@ const useSignupForm = () => {
     organizationName: "",
   });
 
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,6 +84,7 @@ const useSignupForm = () => {
 
       console.log(data);
       alert("Account created successfully! Please check your email for verification.");
+      router.push("/signin");
     } catch (error) {
       console.log(error);
       alert("Failed to create account. Please try again.");

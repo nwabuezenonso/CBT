@@ -18,9 +18,10 @@ import {
   Download,
 } from "lucide-react";
 import { RenderDashboard } from "@/features/dashboard/dashboard";
-import {RenderSettings} from "@/features/setting/setting";
-import {RenderExams} from "@/features/examManager/exams";
-import {User} from "@/features/userManager/user"
+import { RenderSettings } from "@/features/setting/setting";
+// import {RenderExams} from "@/features/examManager/exams";
+import ExamManager from "@/features/examManager/exams";
+import { User } from "@/features/userManager/user";
 
 interface Question {
   id: string;
@@ -45,8 +46,6 @@ interface Exam {
   createdAt: string;
   examinees: number;
 }
-
-
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -82,29 +81,29 @@ const AdminDashboard: React.FC = () => {
     },
   ]);
 
-    const [exams, setExams] = useState<Exam[]>([
-          {
-            id: "1",
-            title: "General Knowledge Test",
-            subject: "General",
-            duration: 60,
-            totalQuestions: 20,
-            status: "active",
-            createdAt: "2024-01-10",
-            examinees: 45,
-          },
-          {
-            id: "2",
-            title: "Computer Science Fundamentals",
-            subject: "Computer Science",
-            duration: 90,
-            totalQuestions: 30,
-            status: "draft",
-            createdAt: "2024-01-12",
-            examinees: 0,
-          },
-        ]);
-      
+  const [exams, setExams] = useState<Exam[]>([
+    {
+      id: "1",
+      title: "General Knowledge Test",
+      subject: "General",
+      duration: 60,
+      totalQuestions: 20,
+      status: "active",
+      createdAt: "2024-01-10",
+      examinees: 45,
+    },
+    {
+      id: "2",
+      title: "Computer Science Fundamentals",
+      subject: "Computer Science",
+      duration: 90,
+      totalQuestions: 30,
+      status: "draft",
+      createdAt: "2024-01-12",
+      examinees: 0,
+    },
+  ]);
+
   const stats = {
     totalQuestions: questions.length,
     totalExams: exams.length,
@@ -298,14 +297,9 @@ const AdminDashboard: React.FC = () => {
     );
   };
 
-
-
-
- 
-
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    
+
     { id: "exams", label: "Exams", icon: CheckCircle },
     { id: "users", label: "Users", icon: Users },
     { id: "settings", label: "Settings", icon: Settings },
@@ -366,10 +360,10 @@ const AdminDashboard: React.FC = () => {
 
         <main className="p-6">
           {activeTab === "dashboard" && <RenderDashboard />}
-        
-          {activeTab === "exams" && <RenderExams/>}
-          {activeTab === "users" && <User/>}
-          {activeTab === "settings" && <RenderSettings/>}
+
+          {activeTab === "exams" && <ExamManager />}
+          {activeTab === "users" && <User />}
+          {activeTab === "settings" && <RenderSettings />}
         </main>
       </div>
 
