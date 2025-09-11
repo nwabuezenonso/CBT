@@ -7,54 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-
+import useSigninForm from "@/features/auth/hooks/useSigninForm";
 export default function AdminSignin() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<any>({});
-
-  const handleInputChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: any = {};
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Please enter a valid email";
-    if (!formData.password) newErrors.password = "Password is required";
-    return newErrors;
-  };
-
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      alert("Login successful! Welcome back.");
-    } catch {
-      alert("Login failed. Please check your credentials.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ 
+  const {
+    handleSubmit,
+    formData,
+    setFormData,
+    handleInputChange,
+    errors,
+    showPassword,
+    setShowPassword,
+    isLoading,
+  } = useSigninForm()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -92,9 +57,9 @@ export default function AdminSignin() {
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
-                  name="email"
+                  name="emailAddress"
                   type="email"
-                  value={formData.email}
+                  value={formData.emailAddress}
                   onChange={handleInputChange}
                   placeholder="john.doe@clinic.com"
                   className={errors.email ? "border-red-500 bg-red-50" : ""}
