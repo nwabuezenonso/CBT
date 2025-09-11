@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const useSigninForm = () => {
+const useSignupForm = () => {
   const [formData, setFormData] = useState<any>({
     firstName: "",
     lastName: "",
@@ -102,4 +102,4 @@ const useSigninForm = () => {
   };
 };
 
-export default useSigninForm;
+export default useSignupForm;
