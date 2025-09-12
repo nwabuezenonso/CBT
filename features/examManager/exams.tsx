@@ -8,14 +8,10 @@ import {
   Clock,
   Users,
   FileText,
-  Settings,
-  BarChart3,
   Search,
   Filter,
   X,
   Save,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
 
 interface Question {
