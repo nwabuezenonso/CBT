@@ -7,6 +7,8 @@ import {
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
+  useSidebar,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { BarChart3, CheckCircle, Users, Settings } from "lucide-react";
 import Link from "next/link";
@@ -21,16 +23,19 @@ const tabs = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { state } = useSidebar(); // state === "collapsed" when icon-only
 
   return (
-    <Sidebar className="border-r bg-background">
+    <Sidebar collapsible="icon" className="border-r bg-background">
       {/* HEADER */}
-      <SidebarHeader className="px-4 py-3 border-b">
+      <SidebarHeader className="px-4 py-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="size-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold">
             Q
           </div>
-          <h2 className="text-xl font-semibold tracking-tight">Quizly</h2>
+          {state !== "collapsed" && (
+            <h2 className="text-xl font-semibold tracking-tight">Quizly</h2>
+          )}
         </div>
       </SidebarHeader>
 
@@ -42,10 +47,10 @@ export function AppSidebar() {
             const isActive = pathname.startsWith(tab.href);
 
             return (
-              <SidebarMenuItem key={tab.id} className={`group relative`}>
+              <SidebarMenuItem key={tab.id} className="group relative">
                 <Link
                   href={tab.href}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-md transition-colors duration-200
+                  className={`flex items-center gap-3 px-2 py-2 rounded-md transition-colors duration-200
                     ${
                       isActive
                         ? "bg-primary text-primary-foreground"
@@ -53,12 +58,10 @@ export function AppSidebar() {
                     }`}
                 >
                   <Icon size={18} className="shrink-0" />
-                  <span className="text-sm font-medium">{tab.label}</span>
+                  {state !== "collapsed" && (
+                    <span className="text-base font-medium">{tab.label}</span>
+                  )}
                 </Link>
-
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-md bg-primary" />
-                )}
               </SidebarMenuItem>
             );
           })}
@@ -67,7 +70,7 @@ export function AppSidebar() {
 
       {/* FOOTER */}
       <SidebarFooter className="border-t px-4 py-3 text-xs text-muted-foreground">
-        © 2025 Quizly
+        {state !== "collapsed" && "© 2025 Quizly"}
       </SidebarFooter>
     </Sidebar>
   );
