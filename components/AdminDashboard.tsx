@@ -1,150 +1,243 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { examService, type Exam, type Student, type ExamResult } from "@/services/examService";
+import { Button } from "@/components/ui/button";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Badge } from "@/components/ui/badge";
 import {
-  Plus,
-  Search,
-  Filter,
-  Edit,
-  Trash2,
+  BookOpen,
   Users,
-  FileText,
-  BarChart3,
   Settings,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Eye,
-  Download,
+  LogOut,
+  Award,
+  TrendingUp,
+  BarChart3,
+  FileText,
 } from "lucide-react";
+import { ExamManagement } from "@/components/examiner/ExamManagement";
+import { StudentManagement } from "@/components/examiner/StudentManagement";
+import { ResultsAnalytics } from "@/components/examiner/ResultsAnalytics";
+import { NotificationCenter } from "@/components/notification-center";
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarContent,
+  SidebarToggle,
+  SidebarNav,
+  SidebarNavItem,
+} from "@/components/ui/sidebar";
 
-interface Question {
-  id: string;
-  type: "multiple-choice" | "true-false" | "essay" | "fill-blank";
-  question: string;
-  options?: string[];
-  correctAnswer: string;
-  points: number;
-  difficulty: "easy" | "medium" | "hard";
-  subject: string;
-  tags: string[];
-  createdAt: string;
-}
+const sidebarItems = [
+  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "exams", label: "Exams", icon: FileText },
+  { id: "students", label: "Students", icon: Users },
+  { id: "results", label: "Results", icon: Award },
+];
 
-interface Exam {
-  id: string;
-  title: string;
-  subject: string;
-  duration: number;
-  totalQuestions: number;
-  status: "draft" | "active" | "completed";
-  createdAt: string;
-  examinees: number;
-}
+export function AdminDashboard() {
+  const { user, logout } = useAuth();
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [results, setResults] = useState<ExamResult[]>([]);
+  const [activeSection, setActiveSection] = useState("overview");
 
-export default function AdminDashboard({ children }: { children: React.ReactNode }) {
-  const [showQuestionModal, setShowQuestionModal] = useState(false);
-  const [showExamModal, setShowExamModal] = useState(false);
+  useEffect(() => {
+    if (user) {
+      setExams(examService.getExams(user.id));
+      setStudents(examService.getStudents());
+      setResults(examService.getExamResults());
+    }
+  }, [user]);
 
-  const pathname = usePathname();
+  const refreshData = () => {
+    if (user) {
+      setExams(examService.getExams(user.id));
+      setStudents(examService.getStudents());
+      setResults(examService.getExamResults());
+    }
+  };
 
-  const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3, href: "/dashboard" },
-    { id: "exams", label: "Exams", icon: CheckCircle, href: "/exams" },
-    { id: "users", label: "Users", icon: Users, href: "/users" },
-    { id: "settings", label: "Settings", icon: Settings, href: "/settings" },
-  ];
+  const totalStudents = students.length;
+  const activeExams = exams.filter((e) => e.isActive).length;
+  const completedExams = results.length;
+  const averageScore =
+    results.length > 0
+      ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
+      : 0;
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case "overview":
+        return (
+          <div className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Exams</CardTitle>
+                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{exams.length}</div>
+                  <p className="text-xs text-muted-foreground">{activeExams} active</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{totalStudents}</div>
+                  <p className="text-xs text-muted-foreground">Registered users</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Completed Exams</CardTitle>
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{completedExams}</div>
+                  <p className="text-xs text-muted-foreground">Total submissions</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{averageScore}%</div>
+                  <p className="text-xs text-muted-foreground">Across all exams</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Exams</CardTitle>
+                  <CardDescription>Your latest created exams</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {exams.slice(0, 5).map((exam) => (
+                    <div key={exam.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{exam.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {exam.questions.length} questions • {exam.duration} min
+                        </p>
+                      </div>
+                      <Badge variant={exam.isActive ? "default" : "secondary"}>
+                        {exam.isActive ? "Active" : "Draft"}
+                      </Badge>
+                    </div>
+                  ))}
+                  {exams.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">No exams created yet</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Results</CardTitle>
+                  <CardDescription>Latest exam submissions</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {results.slice(0, 5).map((result) => (
+                    <div key={result.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{result.studentName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {exams.find((e) => e.id === result.examId)?.title || "Unknown Exam"}
+                        </p>
+                      </div>
+                      <Badge variant={result.percentage >= 70 ? "default" : "destructive"}>
+                        {result.percentage}%
+                      </Badge>
+                    </div>
+                  ))}
+                  {results.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">No results yet</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+      case "exams":
+        return <ExamManagement exams={exams} onRefresh={refreshData} />;
+      case "students":
+        return <StudentManagement students={students} exams={exams} onRefresh={refreshData} />;
+      case "results":
+        return <ResultsAnalytics results={results} exams={exams} />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r">
-        <div className="p-6 border-b">
-          <h1 className="text-xl font-bold text-gray-800">CBT Admin</h1>
-          <p className="text-sm text-gray-600">Test Management System</p>
-        </div>
-
-        <nav className="p-4">
-          <ul className="space-y-2">
-            {tabs.map((tab) => (
-              <li key={tab.id}>
-                <Link
-                  href={tab.href}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    pathname === tab.href
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <tab.icon size={20} />
-                  {tab.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="ml-64 min-h-screen">
-        <header className="bg-white shadow-sm border-b px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-800">
-                {tabs.find((tab) => tab.href === pathname)?.label || "Dashboard"}
-              </h1>
-              <p className="text-gray-600">Manage your CBT system</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <button className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 hover:bg-gray-200 transition-colors">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                    A
-                  </div>
-                  <span className="text-sm font-medium">Admin User</span>
-                </button>
+    <SidebarProvider defaultCollapsed={false}>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-primary-foreground" />
               </div>
+              <div>
+                <h1 className="text-xl font-bold">CBT Pro Admin</h1>
+                <p className="text-sm text-muted-foreground">Welcome back, {user?.name}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <NotificationCenter />
+              <Button variant="ghost" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </header>
 
-        {/* Render active page */}
-        <main className="p-6">{children}</main>
+        <div className="flex">
+          <Sidebar className="min-h-[calc(100vh-73px)]">
+            <SidebarToggle />
+            <SidebarContent>
+              <SidebarNav>
+                {sidebarItems.map((item) => (
+                  <SidebarNavItem
+                    key={item.id}
+                    icon={item.icon}
+                    active={activeSection === item.id}
+                    onClick={() => setActiveSection(item.id)}
+                  >
+                    {item.label}
+                  </SidebarNavItem>
+                ))}
+              </SidebarNav>
+            </SidebarContent>
+          </Sidebar>
+
+          {/* Main Content */}
+          <main className="flex-1 p-6">{renderContent()}</main>
+        </div>
       </div>
-
-      {/* Question Modal */}
-      {showQuestionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-semibold mb-4">Add New Question</h3>
-            {/* Your Question form goes here */}
-            <button
-              onClick={() => setShowQuestionModal(false)}
-              className="mt-4 bg-gray-200 text-gray-800 rounded-lg px-4 py-2 hover:bg-gray-300 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Exam Modal Placeholder */}
-      {showExamModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h3 className="text-xl font-semibold mb-4">Create New Exam</h3>
-            {/* Your Exam form goes here */}
-            <button
-              onClick={() => setShowExamModal(false)}
-              className="mt-4 bg-gray-200 text-gray-800 rounded-lg px-4 py-2 hover:bg-gray-300 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    </SidebarProvider>
   );
 }
