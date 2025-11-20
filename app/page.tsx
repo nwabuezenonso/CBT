@@ -3,52 +3,55 @@
 import React, { useState, useEffect } from "react";
 import {
   CheckCircle,
-  Star,
   ArrowRight,
   Menu,
   X,
   BookOpen,
-  Clock,
   Shield,
   Award,
   BarChart3,
   Users,
   Zap,
-  Play,
-  Globe,
-  Twitter,
-  Linkedin,
-  Mail,
-  Eye,
-  FileText,
-  TrendingUp,
-  Lock,
   Bell,
   Gift,
   Calendar,
 } from "lucide-react";
+import Link from "next/link";
 
 const CBTWaitlistPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [waitlistCount, setWaitlistCount] = useState(1247);
 
-  useEffect(() => {
-    setIsVisible(true);
-    // Simulate waitlist count updates
-    const interval = setInterval(() => {
-      setWaitlistCount((prev) => prev + Math.floor(Math.random() * 3));
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setIsSubmitted(true);
-      setWaitlistCount((prev) => prev + 1);
+    if (!email) return;
+
+    try {
+      setIsLoading(true); // 🟡 Start loading
+
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setIsSubmitted(true);
+        setEmail("");
+      } else {
+        alert(data.error || "Something went wrong");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    } finally {
+      setIsLoading(false); // ✅ Stop loading
     }
   };
 
@@ -143,25 +146,13 @@ const CBTWaitlistPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Desktop Navigation */}
-            {/* <nav className="hidden md:flex space-x-8">
-              {["Features", "Timeline", "Pricing"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
-                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors py-2 relative group"
-                >
-                  {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full rounded-full"></span>
-                </a>
-              ))}
-            </nav> */}
-
             <div className="hidden md:flex items-center space-x-4">
-              <button className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium flex items-center">
-                <Bell className="w-4 h-4 mr-2" />
-                Join Waitlist
-              </button>
+              <a href="#heroSection">
+                <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium w-fit flex items-center">
+                  <Bell className="w-4 h-4 mr-2" />
+                  Join Waitlist
+                </button>
+              </a>
             </div>
 
             {/* Mobile menu button */}
@@ -188,10 +179,12 @@ const CBTWaitlistPage: React.FC = () => {
                   </a>
                 ))}
                 <hr className="border-gray-200" />
-                <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium w-fit flex items-center">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Join Waitlist
-                </button>
+                <a href="#heroSection">
+                  <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium w-fit flex items-center">
+                    <Bell className="w-4 h-4 mr-2" />
+                    Join Waitlist
+                  </button>
+                </a>
               </nav>
             </div>
           )}
@@ -199,12 +192,8 @@ const CBTWaitlistPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-        <div
-          className={`max-w-6xl mx-auto text-center transition-all duration-1000 ${
-            isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-          }`}
-        >
+      <section id="heroSection" className="py-10 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className={`max-w-6xl mx-auto text-center transition-all duration-1000`}>
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight max-w-5xl mx-auto">
             The future of <span className="text-blue-600">secure online exams</span> is almost here
           </h1>
@@ -229,10 +218,41 @@ const CBTWaitlistPage: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center whitespace-nowrap"
+                  disabled={isLoading}
+                  className={`bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold transition-colors shadow-lg flex items-center justify-center whitespace-nowrap ${
+                    isLoading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
+                  }`}
                 >
-                  Join Waitlist
-                  <ArrowRight className="ml-2" size={18} />
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-5 h-5 animate-spin text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4l3.5-3.5L12 0v4a8 8 0 010 16v4l3.5-3.5L12 20v4a8 8 0 01-8-8z"
+                        ></path>
+                      </svg>
+                      Submitting...
+                    </div>
+                  ) : (
+                    <>
+                      Join Waitlist
+                      <ArrowRight className="ml-2" size={18} />
+                    </>
+                  )}
                 </button>
               </form>
             ) : (
@@ -380,31 +400,20 @@ const CBTWaitlistPage: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Don't miss out on the future of testing</h2>
           <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-            CBT Pro will transform how institutions deliver assessments. Join{" "}
-            {waitlistCount.toLocaleString()}+ educators who are already waiting for early access.
+            CBT Pro will transform how institutions deliver assessments. Join 100+ educators who are
+            already waiting for early access.
           </p>
 
-          {!isSubmitted && (
-            <div className="max-w-md mx-auto mb-8">
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-                <input
-                  type="email"
-                  placeholder="Enter your work email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 px-4 py-4 border border-gray-600 bg-gray-800 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 text-center sm:text-left"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center whitespace-nowrap"
-                >
+          <div className="max-w-[200px] mx-auto mb-8">
+            <div className="hidden md:flex items-center space-x-4">
+              <a href="#heroSection">
+                <button className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium flex items-center">
+                  <Bell className="w-4 h-4 mr-2" />
                   Join Waitlist
-                  <ArrowRight className="ml-2" size={18} />
                 </button>
-              </form>
+              </a>
             </div>
-          )}
+          </div>
 
           <div className="text-gray-400 text-sm">
             ⚡ Get notified first • 🎁 Exclusive discounts • 🔒 No spam ever
@@ -428,18 +437,6 @@ const CBTWaitlistPage: React.FC = () => {
           <p className="text-gray-400 mb-6">
             The most advanced computer-based testing platform for educational institutions.
           </p>
-
-          <div className="flex justify-center space-x-6 mb-8">
-            <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 cursor-pointer transition-colors">
-              <Twitter size={18} />
-            </div>
-            <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 cursor-pointer transition-colors">
-              <Linkedin size={18} />
-            </div>
-            <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 cursor-pointer transition-colors">
-              <Mail size={18} />
-            </div>
-          </div>
 
           <div className="border-t border-gray-800 pt-8 text-gray-400 text-sm">
             &copy; 2025 CBT Pro. All rights reserved. • Made with ❤️ for educators worldwide
