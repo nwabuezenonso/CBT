@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   CheckCircle,
   ArrowRight,
@@ -15,432 +15,235 @@ import {
   Bell,
   Gift,
   Calendar,
+  Layers,
+  Smartphone,
+  PieChart
 } from "lucide-react";
 import Link from "next/link";
+import FlowDemo from "@/components/landing/FlowDemo";
 
 const CBTWaitlistPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    try {
-      setIsLoading(true); // 🟡 Start loading
-
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setIsSubmitted(true);
-        setEmail("");
-      } else {
-        alert(data.error || "Something went wrong");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Network error");
-    } finally {
-      setIsLoading(false); // ✅ Stop loading
-    }
-  };
-
-  const earlyBenefits = [
-    {
-      icon: Gift,
-      title: "50% Early Bird Discount",
-      description: "Get half-price access for the first year when we launch",
-      badge: "Limited Time",
-    },
-    {
-      icon: Users,
-      title: "Priority Access",
-      description: "Be among the first 100 institutions to get exclusive beta access",
-      badge: "VIP",
-    },
-    {
-      icon: Award,
-      title: "Free Setup & Training",
-      description: "Personal onboarding session worth $2,500 - completely free",
-      badge: "Premium",
-    },
-    {
-      icon: Zap,
-      title: "Lifetime Updates",
-      description: "Get all future features and updates at no additional cost",
-      badge: "Forever",
-    },
-  ];
-
+  // Email capture logic removed as per new flow focus, but can be re-added if needed for newsletters
+  
   const features = [
     {
       icon: Shield,
-      title: "Military-Grade Security",
-      description: "Advanced anti-cheating with AI monitoring and browser lockdown",
-      status: "In Development",
+      title: "Secure Exams",
+      description: "Advanced proctoring and browser lockdown for credible assessments.",
+      color: "blue"
     },
     {
-      icon: Zap,
-      title: "5-Minute Setup",
-      description: "Create professional exams faster than making coffee",
-      status: "Beta Ready",
+      icon: Layers,
+      title: "Question Bank",
+      description: "Create, organize and reuse questions across multiple exams easily.",
+      color: "purple"
     },
     {
-      icon: Award,
-      title: "Instant Grading",
-      description: "Automated scoring with detailed analytics and feedback",
-      status: "In Development",
+      icon: PieChart,
+      title: "Instant Analytics",
+      description: "Get detailed performance reports immediately after exam completion.",
+      color: "green"
     },
     {
-      icon: BarChart3,
-      title: "Advanced Analytics",
-      description: "Deep insights into student performance and learning gaps",
-      status: "Coming Soon",
-    },
-  ];
-
-  const timeline = [
-    {
-      phase: "Beta Testing",
-      date: "Q2 2025",
-      status: "current",
-      description: "Private beta with select institutions",
-    },
-    {
-      phase: "Public Launch",
-      date: "Q3 2025",
-      status: "upcoming",
-      description: "Full platform release with all features",
-    },
-    {
-      phase: "Mobile App",
-      date: "Q4 2025",
-      status: "planned",
-      description: "Native iOS and Android applications",
+      icon: Smartphone,
+      title: "Mobile Friendly",
+      description: "Students can take exams on any verify, anywhere, anytime.",
+      color: "orange"
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center group cursor-pointer">
-              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
-                <BookOpen className="text-white" size={22} />
+              <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform duration-200">
+                <BookOpen className="text-white" size={20} />
               </div>
-              <span className="ml-3 text-2xl font-bold text-gray-900">CBT Pro</span>
-              <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-                Coming Soon
+              <span className="ml-3 text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-gray-600">
+                CBT Pro
               </span>
             </div>
 
-            <div className="hidden md:flex items-center space-x-4">
-              <a href="#heroSection">
-                <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium w-fit flex items-center">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Join Waitlist
+            <div className="hidden md:flex items-center space-x-6">
+              <nav className="flex space-x-6">
+                 <a href="#features" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Features</a>
+                 <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">How it Works</a>
+                 <Link href="/auth/login" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Login</Link>
+              </nav>
+              <div className="h-6 w-px bg-gray-200"></div>
+              <Link href="/auth/signup">
+                <button className="bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition-all hover:shadow-lg font-medium text-sm flex items-center group">
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </button>
-              </a>
+              </Link>
             </div>
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-200">
-              <nav className="flex flex-col space-y-4">
-                {["Features", "Timeline", "Pricing"].map((item) => (
-                  <a
-                    key={item}
-                    href={`#${item.toLowerCase()}`}
-                    className="text-gray-600 hover:text-gray-900 font-medium transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item}
-                  </a>
-                ))}
-                <hr className="border-gray-200" />
-                <a href="#heroSection">
-                  <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium w-fit flex items-center">
-                    <Bell className="w-4 h-4 mr-2" />
-                    Join Waitlist
-                  </button>
-                </a>
-              </nav>
-            </div>
-          )}
         </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-gray-100 bg-white">
+            <div className="px-4 py-4 space-y-3">
+              <a href="#features" className="block px-3 py-2 text-base font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-blue-600">Features</a>
+              <a href="#how-it-works" className="block px-3 py-2 text-base font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-blue-600">How it Works</a>
+              <Link href="/auth" className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50">Login</Link>
+              <Link href="/auth?mode=signup" className="block w-full">
+                 <button className="w-full mt-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-medium shadow-md hover:bg-blue-700">
+                    Get Started Free
+                 </button>
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
-      <section id="heroSection" className="py-10 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className={`max-w-6xl mx-auto text-center transition-all duration-1000`}>
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight max-w-5xl mx-auto">
-            The future of <span className="text-blue-600">secure online exams</span> is almost here
-          </h1>
+      <section className="relative pt-12 pb-20 lg:pt-24 lg:pb-32 overflow-hidden">
+        {/* Background blobs */}
+        <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/4 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-1/4 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
 
-          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-            CBT Pro is the next-generation computer-based testing platform that will revolutionize
-            how educational institutions create, deliver, and analyze online assessments. Join the
-            waitlist for exclusive early access.
-          </p>
-
-          {/* Waitlist Form */}
-          <div className="max-w-md mx-auto mb-16">
-            {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-                <input
-                  type="email"
-                  placeholder="Enter your work email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center sm:text-left"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className={`bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold transition-colors shadow-lg flex items-center justify-center whitespace-nowrap ${
-                    isLoading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
-                  }`}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="w-5 h-5 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4l3.5-3.5L12 0v4a8 8 0 010 16v4l3.5-3.5L12 20v4a8 8 0 01-8-8z"
-                        ></path>
-                      </svg>
-                      Submitting...
-                    </div>
-                  ) : (
-                    <>
-                      Join Waitlist
-                      <ArrowRight className="ml-2" size={18} />
-                    </>
-                  )}
-                </button>
-              </form>
-            ) : (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-                <div className="flex items-center justify-center mb-4">
-                  <CheckCircle className="text-green-600 w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">You're on the list! 🎉</h3>
-                <p className="text-gray-600">
-                  We'll notify you as soon as CBT Pro launches. Check your email for confirmation
-                  and exclusive updates.
-                </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            
+            {/* Hero Copy */}
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-medium mb-6 animate-fade-in-up">
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 mr-2"></span>
+                The Modern Way to Test
               </div>
-            )}
-          </div>
-
-          <div className="text-sm text-gray-500 mb-12">
-            ✓ No spam, ever • ✓ Exclusive early access • ✓ Special launch pricing
-          </div>
-        </div>
-      </section>
-
-      {/* Early Bird Benefits */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-600 text-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Exclusive waitlist benefits</h2>
-          <p className="text-xl text-blue-100 mb-16 max-w-3xl mx-auto">
-            Be among the first to experience CBT Pro and get incredible perks unavailable to anyone
-            else
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {earlyBenefits.map((benefit, index) => (
-              <div
-                key={index}
-                className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors"
-              >
-                <div className="relative mb-6">
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
-                    <benefit.icon className="text-white" size={32} />
-                  </div>
-                  <span className="absolute -top-2 -right-2 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-full">
-                    {benefit.badge}
-                  </span>
-                </div>
-                <h3 className="text-xl font-semibold mb-4">{benefit.title}</h3>
-                <p className="text-blue-100 leading-relaxed">{benefit.description}</p>
+              
+              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
+                Create Exams in <br className="hidden lg:block"/>
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">Minutes</span>, Not Hours
+              </h1>
+              
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                A seamless platform for examiners to craft engaging assessments and for students to take them without distractions.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <Link href="/auth?mode=signup" className="w-full sm:w-auto">
+                    <button className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all duration-200 flex items-center justify-center">
+                    Start as Examiner
+                    </button>
+                </Link>
+                <Link href="/auth" className="w-full sm:w-auto">
+                    <button className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center">
+                    Join an Exam
+                    </button>
+                </Link>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Features Preview */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">What's coming in CBT Pro</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A sneak peek at the revolutionary features we're building for you
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {features.map((feature, index) => {
-              const statusColors = {
-                "Beta Ready": "bg-green-100 text-green-700 border-green-200",
-                "In Development": "bg-blue-100 text-blue-700 border-blue-200",
-                "Coming Soon": "bg-orange-100 text-orange-700 border-orange-200",
-              };
-
-              return (
-                <div
-                  key={index}
-                  className="bg-gray-50 p-8 rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-200">
-                      <feature.icon className="text-blue-600" size={28} />
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        statusColors[feature.status as keyof typeof statusColors]
-                      }`}
-                    >
-                      {feature.status}
-                    </span>
+               <div className="mt-10 flex items-center justify-center lg:justify-start space-x-8 text-gray-400 text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                     <CheckCircle size={16} className="text-green-500" /> Free Plan Available
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Development Timeline */}
-      <section id="timeline" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">Development roadmap</h2>
-            <p className="text-xl text-gray-600">Here's what to expect and when</p>
-          </div>
-
-          <div className="space-y-8">
-            {timeline.map((item, index) => (
-              <div key={index} className="flex items-start space-x-6">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    item.status === "current"
-                      ? "bg-blue-600 text-white"
-                      : item.status === "upcoming"
-                      ? "bg-orange-100 text-orange-600 border-2 border-orange-200"
-                      : "bg-gray-100 text-gray-400 border-2 border-gray-200"
-                  }`}
-                >
-                  {item.status === "current" ? (
-                    <Calendar size={20} />
-                  ) : (
-                    <span className="text-sm font-bold">{index + 1}</span>
-                  )}
-                </div>
-                <div className="flex-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-semibold text-gray-900">{item.phase}</h3>
-                    <span className="text-lg font-bold text-blue-600">{item.date}</span>
+                  <div className="flex items-center gap-2">
+                     <CheckCircle size={16} className="text-green-500" /> No Credit Card
                   </div>
-                  <p className="text-gray-600">{item.description}</p>
-                  {item.status === "current" && (
-                    <div className="mt-4 flex items-center text-blue-600">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></div>
-                      <span className="text-sm font-medium">Currently in progress</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Don't miss out on the future of testing</h2>
-          <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-            CBT Pro will transform how institutions deliver assessments. Join 100+ educators who are
-            already waiting for early access.
-          </p>
-
-          <div className="max-w-[200px] mx-auto mb-8">
-            <div className="hidden md:flex items-center space-x-4">
-              <a href="#heroSection">
-                <button className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium flex items-center">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Join Waitlist
-                </button>
-              </a>
+               </div>
             </div>
+
+            {/* Hero Visual - Flow Demo */}
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+               <div className="absolute inset-0 bg-linear-to-tr from-blue-600 to-purple-600 rounded-4xl transform rotate-3 scale-105 opacity-10 blur-xl"></div>
+              <FlowDemo />
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works Section */}
+      <section id="how-it-works" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">How it works</h2>
+              <p className="text-lg text-gray-600">Three simple steps to running your first exam</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 relative">
+                {/* Connecting Line (Desktop) */}
+                <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gray-100 -z-10"></div>
+
+                {[
+                   { step: "01", title: "Create", desc: "Set up questions, time limits, and assign students in minutes.", color: "bg-blue-100 text-blue-600" },
+                   { step: "02", title: "Monitor", desc: "Watch student progress in real-time as they take the exam securely.", color: "bg-purple-100 text-purple-600" },
+                   { step: "03", title: "Analyze", desc: "Get instant grades and deep performance insights automatically.", color: "bg-green-100 text-green-600" }
+                ].map((item, i) => (
+                    <div key={i} className="relative bg-white p-6 rounded-2xl border border-gray-100 text-center hover:shadow-lg transition-all duration-300 group">
+                        <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center font-bold text-xl mb-6 ${item.color} group-hover:scale-110 transition-transform duration-300`}>
+                            {item.step}
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
+                        <p className="text-gray-600">{item.desc}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section id="features" className="py-24 bg-gray-50 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything needed to run perfect exams</h2>
+            <p className="text-lg text-gray-600">Designed to make the entire assessment lifecycle smoother than ever before.</p>
           </div>
 
-          <div className="text-gray-400 text-sm">
-            ⚡ Get notified first • 🎁 Exclusive discounts • 🔒 No spam ever
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, idx) => (
+              <div key={idx} className="bg-gray-50 p-8 rounded-2xl border border-gray-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300 group cursor-default">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-colors ${
+                    feature.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                    feature.color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                    feature.color === 'green' ? 'bg-green-100 text-green-600' :
+                    'bg-orange-100 text-orange-600'
+                }`}>
+                  <feature.icon size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center">
-              <BookOpen className="text-white" size={20} />
-            </div>
-            <span className="ml-3 text-xl font-bold">CBT Pro</span>
-            <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-              Coming Soon
-            </span>
-          </div>
+      <footer className="bg-gray-50 border-t border-gray-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+           <div className="flex items-center gap-2">
+               <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                 <BookOpen className="text-white" size={16} />
+               </div>
+               <span className="font-bold text-gray-900">CBT Pro</span>
+           </div>
+           
+           <p className="text-gray-500 text-sm">
+             &copy; 2025 CBT Pro. All rights reserved.
+           </p>
 
-          <p className="text-gray-400 mb-6">
-            The most advanced computer-based testing platform for educational institutions.
-          </p>
-
-          <div className="border-t border-gray-800 pt-8 text-gray-400 text-sm">
-            &copy; 2025 CBT Pro. All rights reserved. • Made with ❤️ for educators worldwide
-          </div>
+           <div className="flex gap-6">
+              <a href="#" className="text-gray-400 hover:text-gray-900 transition-colors">Twitter</a>
+              <a href="#" className="text-gray-400 hover:text-gray-900 transition-colors">GitHub</a>
+              <a href="#" className="text-gray-400 hover:text-gray-900 transition-colors">Support</a>
+           </div>
         </div>
       </footer>
     </div>

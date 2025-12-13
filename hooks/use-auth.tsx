@@ -13,7 +13,7 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string,
-    role: "admin" | "student"
+    role: "examiner" | "examinee"
   ) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -26,9 +26,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    const initAuth = async () => {
+        try {
+            const currentUser = await authService.getCurrentUser();
+            setUser(currentUser);
+        } catch (e) {
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -40,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     name: string,
-    role: "admin" | "student"
+    role: "examiner" | "examinee"
   ) => {
     const user = await authService.register(email, password, name, role);
     setUser(user);

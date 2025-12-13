@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { AdminDashboard } from "@/components/AdminDashboard";
-import { StudentDashboard } from "@/components/student-dashboard";
+
 import { Loader2 } from "lucide-react";
 
 import { Overview } from "@/components/examiner";
@@ -36,5 +36,10 @@ export default function DashboardPage() {
     return null;
   }
 
-  return user.role === "admin" ? <Overview /> : <StudentDashboard />;
+  if (user.role !== "examiner") {
+      router.push("/");
+      return null;
+  }
+
+  return <Overview />;
 }

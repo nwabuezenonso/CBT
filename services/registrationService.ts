@@ -1,5 +1,6 @@
 export interface RegistrationForm {
-  id: string;
+  id: string; // Mongoose _id or virtual id
+  _id?: string;
   examId: string;
   title: string;
   description: string;
@@ -26,79 +27,78 @@ export interface RegistrationResponse {
   status: "pending" | "approved" | "rejected";
 }
 
-const storageKey = "cbt_registration_forms";
-
 export const registrationService = {
-  getRegistrationForms(): RegistrationForm[] {
-    if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : [];
+  getRegistrationForms: async (): Promise<RegistrationForm[]> => {
+    const res = await fetch('/api/registrations');
+    if (!res.ok) throw new Error('Failed to fetch registration forms');
+    const forms = await res.json();
+    return forms.map((f: any) => ({ ...f, id: f.id || f._id }));
   },
 
-  saveRegistrationForms(forms: RegistrationForm[]): void {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(storageKey, JSON.stringify(forms));
+  getRegistrationFormByExamId: async (examId: string): Promise<RegistrationForm | null> => {
+     try {
+       const forms = await registrationService.getRegistrationForms();
+       return forms.find(f => f.examId === examId) || null;
+     } catch (e) {
+       return null;
+     }
   },
 
-  createRegistrationForm(
+  getRegistrationFormById: async (id: string): Promise<RegistrationForm | null> => {
+    const res = await fetch(`/api/registrations/${id}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error('Failed to fetch registration form');
+    const f = await res.json();
+    return { ...f, id: f.id || f._id };
+  },
+
+  createRegistrationForm: async (
     examId: string,
-    formData: Omit<RegistrationForm, "id" | "createdAt" | "responses">
-  ): RegistrationForm {
-    const forms = this.getRegistrationForms();
-    const newForm: RegistrationForm = {
-      ...formData,
-      id: Date.now().toString(),
-      examId,
-      createdAt: new Date().toISOString(),
-      responses: [],
-    };
-
-    forms.push(newForm);
-    this.saveRegistrationForms(forms);
-    return newForm;
+    formData: Omit<RegistrationForm, "id" | "createdAt" | "responses" | "_id" | "examId">
+  ): Promise<RegistrationForm> => {
+    const res = await fetch('/api/registrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...formData, examId, responses: [] }),
+    });
+    if (!res.ok) throw new Error('Failed to create registration form');
+    const f = await res.json();
+    return { ...f, id: f.id || f._id };
   },
 
-  getRegistrationFormByExamId(examId: string): RegistrationForm | null {
-    const forms = this.getRegistrationForms();
-    return forms.find((form) => form.examId === examId) || null;
+  updateRegistrationForm: async (formId: string, updates: Partial<RegistrationForm>): Promise<RegistrationForm> => {
+    const res = await fetch(`/api/registrations/${formId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error('Failed to update registration form');
+    const f = await res.json();
+    return { ...f, id: f.id || f._id };
   },
 
-  updateRegistrationForm(formId: string, updates: Partial<RegistrationForm>): void {
-    const forms = this.getRegistrationForms();
-    const index = forms.findIndex((form) => form.id === formId);
-    if (index !== -1) {
-      forms[index] = { ...forms[index], ...updates };
-      this.saveRegistrationForms(forms);
-    }
+  deleteRegistrationForm: async (formId: string): Promise<void> => {
+    const res = await fetch(`/api/registrations/${formId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete registration form');
   },
 
-  submitRegistration(
+  submitRegistration: async (
     formId: string,
     response: Omit<RegistrationResponse, "id" | "submittedAt" | "status">
-  ): void {
-    const forms = this.getRegistrationForms();
-    const formIndex = forms.findIndex((form) => form.id === formId);
-
-    if (formIndex !== -1) {
-      const newResponse: RegistrationResponse = {
-        ...response,
-        id: Date.now().toString(),
-        submittedAt: new Date().toISOString(),
-        status: "pending",
-      };
-
-      forms[formIndex].responses.push(newResponse);
-      this.saveRegistrationForms(forms);
-    }
+  ): Promise<void> => {
+     const res = await fetch(`/api/registrations/${formId}/responses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(response)
+     });
+     
+     if (!res.ok) throw new Error('Failed to submit registration');
   },
 
-  generateShareableLink(formId: string): string {
+  generateShareableLink: (formId: string): string => {
+    if (typeof window === "undefined") return "";
     return `${window.location.origin}/register/${formId}`;
-  },
-
-  deleteRegistrationForm(formId: string): void {
-    const forms = this.getRegistrationForms();
-    const filtered = forms.filter((form) => form.id !== formId);
-    this.saveRegistrationForms(filtered);
   },
 };

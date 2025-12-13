@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   registrationService,
   type RegistrationForm,
@@ -52,8 +52,28 @@ export function RegistrationFormManager({
 }: RegistrationFormManagerProps) {
   const [showCreateFormSheet, setShowCreateFormSheet] = useState(false);
   const [showResponsesSheet, setShowResponsesSheet] = useState(false);
-  const [currentForm, setCurrentForm] = useState<RegistrationForm | null>(null);
+  const [activeForm, setActiveForm] = useState<RegistrationForm | null>(null);
+  const [viewResponseForm, setViewResponseForm] = useState<RegistrationForm | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchForm = async () => {
+      if (isOpen && examId) {
+        setIsLoading(true);
+        try {
+          const form = await registrationService.getRegistrationFormByExamId(examId);
+          setActiveForm(form);
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to load registration form");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchForm();
+  }, [isOpen, examId]);
 
   const [formData, setFormData] = useState({
     title: `Registration for ${examTitle}`,
@@ -80,19 +100,19 @@ export function RegistrationFormManager({
     type: "text",
     label: "",
     required: false,
+    options: [],
   });
-
-  const existingForm = registrationService.getRegistrationFormByExamId(examId);
+  const [optionsInput, setOptionsInput] = useState("");
 
   const loadFormForEditing = () => {
-    if (!existingForm) return;
+    if (!activeForm) return;
 
     setFormData({
-      title: existingForm.title,
-      description: existingForm.description,
-      isActive: existingForm.isActive,
+      title: activeForm.title,
+      description: activeForm.description,
+      isActive: activeForm.isActive,
     });
-    setFields(existingForm.fields);
+    setFields(activeForm.fields);
     setIsEditing(true);
     setShowCreateFormSheet(true);
   };
@@ -132,61 +152,63 @@ export function RegistrationFormManager({
     };
 
     setFields([...fields, field]);
-    setNewField({ type: "text", label: "", required: false });
+    setNewField({ type: "text", label: "", required: false, options: [] });
+    setOptionsInput("");
   };
 
   const removeField = (fieldId: string) => {
     setFields(fields.filter((field) => field.id !== fieldId));
   };
 
-  const saveRegistrationForm = () => {
+  const saveRegistrationForm = async () => {
     try {
-      if (isEditing && existingForm) {
+      if (isEditing && activeForm) {
         // Update existing form
-        registrationService.updateRegistrationForm(existingForm.id, {
+        const updated = await registrationService.updateRegistrationForm(activeForm.id || activeForm._id!, {
           ...formData,
           fields,
         });
+        setActiveForm(updated);
         toast.success("Registration form updated successfully!");
       } else {
-        registrationService.createRegistrationForm(examId, {
+        const created = await registrationService.createRegistrationForm(examId, {
           ...formData,
           fields,
-          examId,
         });
-
+        setActiveForm(created);
         toast.success("Registration form created successfully!");
       }
 
       setShowCreateFormSheet(false);
       resetFormData();
-      onClose();
+      // onClose(); // Keep open to show status? Or close as per original logic. Original closed it.
     } catch (error) {
       toast.error(`Failed to ${isEditing ? "update" : "create"} registration form.`);
     }
   };
 
   const copyShareableLink = () => {
-    if (!existingForm) return;
+    if (!activeForm) return;
 
-    const link = registrationService.generateShareableLink(existingForm.id);
+    const link = registrationService.generateShareableLink(activeForm.id || activeForm._id!);
     navigator.clipboard.writeText(link);
     toast.success("Registration link copied to clipboard!");
   };
 
   const viewResponses = () => {
-    if (!existingForm) return;
-    setCurrentForm(existingForm);
+    if (!activeForm) return;
+    setViewResponseForm(activeForm);
     setShowResponsesSheet(true);
   };
 
-  const deleteForm = () => {
-    if (!existingForm) return;
+  const deleteForm = async () => {
+    if (!activeForm) return;
 
     if (confirm("Are you sure you want to delete this registration form?")) {
-      registrationService.deleteRegistrationForm(existingForm.id);
+      await registrationService.deleteRegistrationForm(activeForm.id || activeForm._id!);
+      setActiveForm(null);
       toast.success("Registration form deleted successfully!");
-      onClose();
+      // onClose();
     }
   };
 
@@ -199,7 +221,9 @@ export function RegistrationFormManager({
             <DialogDescription>Manage student registration for this exam</DialogDescription>
           </DialogHeader>
 
-          {existingForm ? (
+          {isLoading ? (
+             <div className="flex justify-center py-8">Loading...</div>
+          ) : activeForm ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Card className="p-4">
@@ -211,19 +235,19 @@ export function RegistrationFormManager({
                     <div className="flex items-center justify-between">
                       <span>Status:</span>
                       <Badge
-                        variant={existingForm.isActive ? "default" : "secondary"}
+                        variant={activeForm.isActive ? "default" : "secondary"}
                         className="text-xs"
                       >
-                        {existingForm.isActive ? "Active" : "Inactive"}
+                        {activeForm.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Responses:</span>
-                      <span className="font-semibold">{existingForm.responses.length}</span>
+                      <span className="font-semibold">{activeForm.responses.length}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Fields:</span>
-                      <span className="font-semibold">{existingForm.fields.length}</span>
+                      <span className="font-semibold">{activeForm.fields.length}</span>
                     </div>
                   </div>
                 </Card>
@@ -251,7 +275,7 @@ export function RegistrationFormManager({
                 <div className="flex gap-2">
                   <Button size="sm" onClick={viewResponses}>
                     <Users className="w-4 h-4 mr-2" />
-                    Responses ({existingForm.responses.length})
+                    Responses ({activeForm.responses.length})
                   </Button>
                   <Button size="sm" variant="outline" onClick={loadFormForEditing}>
                     <Edit className="w-4 h-4 mr-2" />
@@ -303,7 +327,7 @@ export function RegistrationFormManager({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-6 mt-6">
+          <div className="space-y-6 mt-6 px-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Form Title</Label>
@@ -389,15 +413,18 @@ export function RegistrationFormManager({
                     <Label>Options (comma-separated)</Label>
                     <Input
                       placeholder="Option 1, Option 2, Option 3"
-                      onChange={(e) =>
+                      value={optionsInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setOptionsInput(val);
                         setNewField((prev) => ({
                           ...prev,
-                          options: e.target.value
+                          options: val
                             .split(",")
                             .map((opt) => opt.trim())
                             .filter(Boolean),
-                        }))
-                      }
+                        }));
+                      }}
                     />
                   </div>
                 )}
@@ -459,45 +486,47 @@ export function RegistrationFormManager({
           <SheetHeader>
             <SheetTitle>Registration Responses</SheetTitle>
             <SheetDescription>
-              {currentForm?.responses.length || 0} responses received
+              {viewResponseForm?.responses.length || 0} responses received
             </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 mt-6">
-            {currentForm?.responses.map((response) => (
-              <Card key={response.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{response.studentName}</CardTitle>
-                    <Badge
-                      variant={
-                        response.status === "approved"
-                          ? "default"
-                          : response.status === "rejected"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {response.status}
-                    </Badge>
-                  </div>
-                  <CardDescription>{response.studentEmail}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {Object.entries(response.responses).map(([fieldLabel, value]) => (
-                      <div key={fieldLabel} className="flex justify-between">
-                        <span className="font-medium">{fieldLabel}:</span>
-                        <span>{value}</span>
-                      </div>
-                    ))}
-                    <div className="text-xs text-muted-foreground pt-2">
-                      Submitted: {new Date(response.submittedAt).toLocaleString()}
+            {viewResponseForm?.responses && viewResponseForm.responses.length > 0 ? (
+              viewResponseForm.responses.map((response) => (
+                <Card key={response.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{response.studentName}</CardTitle>
+                      <Badge
+                        variant={
+                          response.status === "approved"
+                            ? "default"
+                            : response.status === "rejected"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {response.status}
+                      </Badge>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )) || (
+                    <CardDescription>{response.studentEmail}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Object.entries(response.responses).map(([fieldLabel, value]) => (
+                        <div key={fieldLabel} className="flex justify-between">
+                          <span className="font-medium">{fieldLabel}:</span>
+                          <span>{value}</span>
+                        </div>
+                      ))}
+                      <div className="text-xs text-muted-foreground pt-2">
+                        Submitted: {new Date(response.submittedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No responses yet</p>

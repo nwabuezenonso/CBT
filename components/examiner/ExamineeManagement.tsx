@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { examService, type Student, type Exam } from "@/services/examService";
+import { examService, type Exam } from "@/services/examService";
 import { notificationService } from "@/lib/notification-service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,17 +31,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Users, UserPlus, Mail, Calendar, BookOpen } from "lucide-react";
-// import { useToast } from "@/hooks/use-toast";
-
 import { toast } from "sonner";
 
-interface StudentManagementProps {
+// Helper type until imported or unified
+interface Student {
+    id: string;
+    name: string;
+    email: string;
+    registeredAt: string;
+}
+
+interface ExamineeManagementProps {
   students: Student[];
   exams: Exam[];
+  assignments?: any[]; // Added
   onRefresh: () => void;
 }
 
-export function StudentManagement({ students, exams, onRefresh }: StudentManagementProps) {
+export function ExamineeManagement({ students, exams, assignments = [], onRefresh }: ExamineeManagementProps) {
   // const { toast } = useToast();
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -54,36 +61,40 @@ export function StudentManagement({ students, exams, onRefresh }: StudentManagem
       student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAssignExam = () => {
+
+  const handleAssignExam = async () => {
     if (!selectedStudent || !selectedExam) return;
 
-    examService.assignExamToStudent(selectedStudent.id, selectedExam);
+    try {
+        const exam = exams.find((e) => (e.id || e._id) === selectedExam);
+        if (!exam) return;
 
-    const exam = exams.find((e) => e.id === selectedExam);
-    if (exam) {
-      notificationService.notifyExamAssigned(selectedStudent.id, exam.title, exam.id);
+        // 1. Assign in DB
+        const assignmentRes = await examService.assignExamToStudent(
+            { id: selectedStudent.id, name: selectedStudent.name, email: selectedStudent.email },
+            { id: exam.id || exam._id || "", title: exam.title }
+        );
+        
+        // 2. Email sent automatically by backend
+        
+        // 3. Notify UI
+        notificationService.notifyExamAssigned(selectedStudent.id, exam.title, exam.id || exam._id || ""); 
 
-      // Simulate email notification
-      notificationService.sendEmailNotification(
-        selectedStudent.email,
-        "New Exam Assigned",
-        `You have been assigned to take "${exam.title}". Please log in to your CBT Pro account to view details.`
-      );
+        toast.success("Exam Assigned & Email Sent", {
+            description: `Invitation sent to ${selectedStudent.email}`,
+        });
+
+        setShowAssignDialog(false);
+        setSelectedStudent(null);
+        setSelectedExam("");
+        onRefresh();
+    } catch (error: any) {
+        toast.error("Assignment Failed", { description: error.message });
     }
-
-    toast.success("Success", {
-      description: `Exam assigned to ${selectedStudent.name} successfully! Notification sent.`,
-    });
-
-    setShowAssignDialog(false);
-    setSelectedStudent(null);
-    setSelectedExam("");
-    onRefresh();
   };
 
   const getAssignedExamsCount = (studentId: string) => {
-    const assignedExams = JSON.parse(localStorage.getItem(`student_exams_${studentId}`) || "[]");
-    return assignedExams.length;
+    return assignments.filter((a) => a.studentId === studentId).length;
   };
 
   return (
@@ -122,7 +133,7 @@ export function StudentManagement({ students, exams, onRefresh }: StudentManagem
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{exams.filter((e) => e.isActive).length}</div>
+            <div className="text-2xl font-bold">{exams.length}</div>
             <p className="text-xs text-muted-foreground">Available for assignment</p>
           </CardContent>
         </Card>
@@ -212,7 +223,7 @@ export function StudentManagement({ students, exams, onRefresh }: StudentManagem
                                   {exams
                                     .filter((e) => e.isActive)
                                     .map((exam) => (
-                                      <SelectItem key={exam.id} value={exam.id}>
+                                      <SelectItem key={exam.id ?? exam._id} value={exam.id ?? exam._id}>
                                         {exam.title} ({exam.questions.length} questions,{" "}
                                         {exam.duration} min)
                                       </SelectItem>

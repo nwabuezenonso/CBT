@@ -2,8 +2,8 @@ export interface User {
   id: string
   email: string
   name: string
-  role: "admin" | "student"
-  createdAt: string
+  role: "examiner" | "examinee"
+  createdAt?: string
 }
 
 export interface AuthState {
@@ -11,55 +11,73 @@ export interface AuthState {
   isAuthenticated: boolean
 }
 
-// Mock authentication functions using localStorage
 export const authService = {
   login: async (email: string, password: string): Promise<User> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    const users = JSON.parse(localStorage.getItem("cbt_users") || "[]")
-    const user = users.find((u: User) => u.email === email)
-
-    if (!user) {
-      throw new Error("User not found")
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Login failed');
     }
 
-    // In a real app, you'd verify the password hash
-    localStorage.setItem("cbt_current_user", JSON.stringify(user))
-    return user
+    const data = await res.json();
+    const user: User = {
+        id: data._id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        createdAt: data.createdAt
+    };
+    
+    return user;
   },
 
-  register: async (email: string, password: string, name: string, role: "admin" | "student"): Promise<User> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  register: async (email: string, password: string, name: string, role: "examiner" | "examinee"): Promise<User> => {
+     const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name, role }),
+    });
 
-    const users = JSON.parse(localStorage.getItem("cbt_users") || "[]")
-
-    if (users.find((u: User) => u.email === email)) {
-      throw new Error("User already exists")
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Registration failed');
     }
 
-    const newUser: User = {
-      id: Date.now().toString(),
-      email,
-      name,
-      role,
-      createdAt: new Date().toISOString(),
+    const data = await res.json();
+    
+    const user: User = {
+        id: data._id || data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        createdAt: data.createdAt
+    };
+
+    return user;
+  },
+
+  logout: async () => {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        // Optional: window.location.reload() or redirect managed by hook
+    } catch (e) {
+        console.error("Logout failed", e);
     }
-
-    users.push(newUser)
-    localStorage.setItem("cbt_users", JSON.stringify(users))
-    localStorage.setItem("cbt_current_user", JSON.stringify(newUser))
-
-    return newUser
   },
 
-  logout: () => {
-    localStorage.removeItem("cbt_current_user")
-  },
-
-  getCurrentUser: (): User | null => {
-    const userStr = localStorage.getItem("cbt_current_user")
-    return userStr ? JSON.parse(userStr) : null
+  getCurrentUser: async (): Promise<User | null> => {
+    try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.id ? data : null; // data is the user object directly from our API map
+    } catch (e) {
+        return null;
+    }
   },
 }

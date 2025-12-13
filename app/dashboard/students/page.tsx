@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { StudentManagement } from "@/components/examiner";
+import { useState, useEffect } from "react";
+import { ExamineeManagement } from "@/components/examiner";
 import { examService, type Exam, type Student, type ExamResult } from "@/services/examService";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -11,15 +11,29 @@ const StudentManagementPage = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [results, setResults] = useState<ExamResult[]>([]);
 
-  const refreshData = () => {
+  const loadData = async () => {
     if (user) {
-      setExams(examService.getExams(user.id));
-      setStudents(examService.getStudents());
-      setResults(examService.getExamResults());
+      try {
+        const fetchedExams = await examService.getExams();
+        setExams(fetchedExams);
+        setStudents(examService.getStudents());
+        const fetchedResults = await examService.getExamResults();
+        setResults(fetchedResults);
+      } catch (error) {
+         console.error(error);
+      }
     }
   };
 
-  return <StudentManagement exams={exams} onRefresh={refreshData} students={students} />;
+  const refreshData = () => {
+    loadData();
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  return <ExamineeManagement exams={exams} onRefresh={refreshData} students={students} />;
 };
 
 export default StudentManagementPage;

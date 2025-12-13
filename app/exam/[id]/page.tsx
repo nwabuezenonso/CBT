@@ -13,50 +13,54 @@ import Link from "next/link";
 export default function ExamPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [exam, setExam] = useState<Exam | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/auth/login");
-      return;
-    }
-
-    if (user && params.id) {
+    if (params.id) {
       loadExam();
     }
-  }, [user, params.id, isAuthenticated]);
+  }, [user, params.id]);
 
-  const loadExam = () => {
-    if (!user || !params.id) return;
+  const loadExam = async () => {
+    if (!params.id) return;
 
-    const examData = examService.getExam(params.id as string);
+    try {
+      const examData = await examService.getExam(params.id as string);
 
-    if (!examData) {
+      if (!examData) {
+        setLoading(false);
+        return;
+      }
+
+      if (user) {
+        // Check if already completed (using API results)
+        try {
+          const results = await examService.getExamResults();
+          // @ts-ignore
+          const hasCompleted = results.some((r) => (r.examId._id || r.examId) === examData.id && (r.examineeId._id || r.examineeId) === user.id);
+
+          if (user.role === "examinee" && hasCompleted) {
+            setIsAuthorized(false);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          // If fetching results fails (e.g., 401), just ignore it for now or assume not completed
+          console.error("Failed to fetch results", err);
+        }
+      }
+
+      setExam(examData);
+      setIsAuthorized(true);
       setLoading(false);
-      return;
-    }
-
-    // Check if student is assigned to this exam
-    const assignedExams = JSON.parse(localStorage.getItem(`student_exams_${user.id}`) || "[]");
-    const isAssigned = assignedExams.includes(examData.id);
-
-    // Check if already completed
-    const results = examService.getExamResults();
-    const hasCompleted = results.some((r) => r.examId === examData.id && r.studentId === user.id);
-
-    if (user.role === "student" && (!isAssigned || hasCompleted)) {
-      setIsAuthorized(false);
+    } catch (error) {
+      console.error(error);
       setLoading(false);
-      return;
     }
-
-    setExam(examData);
-    setIsAuthorized(true);
-    setLoading(false);
   };
 
   const handleStartExam = () => {

@@ -39,9 +39,12 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60); // Convert to seconds
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [finalScore, setFinalScore] = useState<number | null>(null);
   const [startTime] = useState(Date.now());
 
   const currentQuestion = exam.questions[currentQuestionIndex];
+  const currentQuestionId = currentQuestion?._id || "";
   const progress = ((currentQuestionIndex + 1) / exam.questions.length) * 100;
   const answeredQuestions = Object.keys(answers).length;
 
@@ -62,32 +65,51 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
 
   // Auto-save effect
   useEffect(() => {
-    const autoSave = setInterval(() => {
+    const autoSave = setInterval(async () => {
       if (Object.keys(answers).length > 0) {
-        localStorage.setItem(
-          `exam_progress_${exam.id}_${user?.id}`,
-          JSON.stringify({
-            answers,
-            currentQuestionIndex,
-            timeRemaining,
-            startTime,
-          })
-        );
+         try {
+             await fetch('/api/exams/progress', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                     examId: exam.id,
+                     answers,
+                     currentQuestionIndex,
+                     timeRemaining,
+                     startTime
+                 })
+             });
+         } catch (e) {
+             console.error("Failed to save progress", e);
+         }
       }
     }, 10000); // Auto-save every 10 seconds
 
     return () => clearInterval(autoSave);
-  }, [answers, currentQuestionIndex, timeRemaining, exam.id, user?.id, startTime]);
+  }, [answers, currentQuestionIndex, timeRemaining, exam.id, startTime]);
 
   // Load saved progress on mount
   useEffect(() => {
-    const savedProgress = localStorage.getItem(`exam_progress_${exam.id}_${user?.id}`);
-    if (savedProgress) {
-      const { answers: savedAnswers, currentQuestionIndex: savedIndex } = JSON.parse(savedProgress);
-      setAnswers(savedAnswers);
-      setCurrentQuestionIndex(savedIndex);
-    }
-  }, [exam.id, user?.id]);
+    const loadProgress = async () => {
+        if (!exam.id) return;
+        try {
+            const res = await fetch(`/api/exams/progress?examId=${exam.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data) {
+                    setAnswers(data.answers || {});
+                    setCurrentQuestionIndex(data.currentQuestionIndex || 0);
+                    if (data.timeRemaining) setTimeRemaining(data.timeRemaining);
+                    // Start time might be tricky if resuming, ideally we keep original start time
+                    // or calculate elapsed. For now simple restore.
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load progress", e);
+        }
+    };
+    loadProgress();
+  }, [exam.id]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -115,67 +137,50 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
     setCurrentQuestionIndex(index);
   };
 
-  const calculateScore = useCallback(() => {
-    let score = 0;
-    exam.questions.forEach((question) => {
-      const userAnswer = answers[question.id];
-      if (question.type === "multiple-choice" && userAnswer !== undefined) {
-        if (Number.parseInt(userAnswer) === question.correctAnswer) {
-          score += question.points;
-        }
-      }
-      // For essay questions, we'll give full points for now (in a real system, this would need manual grading)
-      else if (question.type === "essay" && userAnswer && userAnswer.trim()) {
-        score += question.points;
-      }
-    });
-    return score;
-  }, [exam.questions, answers]);
+
+  
+  // calculateScore removed - done on server
 
   const handleSubmit = async () => {
-    if (!user) return;
-
     setIsSubmitting(true);
 
     try {
-      const score = calculateScore();
-      const percentage = Math.round((score / exam.totalPoints) * 100);
       const timeSpent = Math.round((Date.now() - startTime) / 1000 / 60); // Convert to minutes
 
-      const result = examService.submitExamResult({
-        examId: exam.id,
-        studentId: user.id,
-        studentName: user.name,
-        studentEmail: user.email,
+      // Submit to backend (calculated on server)
+      const submission = await examService.submitExamResult({
+        examId: exam.id!,
         answers,
-        score,
-        totalPoints: exam.totalPoints,
-        percentage,
-        completedAt: new Date().toISOString(),
         timeSpent,
       });
+      
+      const { percentage } = submission; // final value from server
 
-      // Notify student about result
-      notificationService.notifyResultAvailable(user.id, exam.title, percentage);
+      if (user) {
+        // Notify student about result
+        notificationService.notifyResultAvailable(user.id, exam.title, percentage);
 
-      // Notify admin about completion
-      notificationService.notifyExamCompleted(exam.createdBy, user.name, exam.title, percentage);
+        // Notify admin about completion
+        notificationService.notifyExamCompleted(exam.examinerId, user.name, exam.title, percentage); 
 
-      // Simulate email notifications
-      notificationService.sendEmailNotification(
-        user.email,
-        "Exam Result Available",
-        `Your result for "${exam.title}" is now available. You scored ${percentage}%.`
-      );
+        // Simulate email notifications
+        notificationService.sendEmailNotification(
+            user.email,
+            "Exam Result Available",
+            `Your result for "${exam.title}" is now available. You scored ${percentage}%.`
+        );
+      }
 
-      // Clear saved progress
-      localStorage.removeItem(`exam_progress_${exam.id}_${user.id}`);
+      // Clear save
+      await fetch(`/api/exams/progress?examId=${exam.id}`, { method: 'DELETE' });
 
       toast.success("Exam Submitted", {
         description: `Your exam has been submitted successfully. Score: ${percentage}%`,
       });
 
-      router.push("/dashboard");
+      setFinalScore(percentage);
+      setIsSubmitted(true);
+      // router.push("/dashboard"); // Removed redirect
     } catch (error) {
       toast.error("Submission Failed", {
         description: "There was an error submitting your exam. Please try again.",
@@ -184,6 +189,9 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
       setIsSubmitting(false);
     }
   };
+
+
+
 
   const handleAutoSubmit = () => {
     toast("Time's up", {
@@ -197,6 +205,38 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
     if (timeRemaining <= 600) return "text-yellow-600"; // Last 10 minutes
     return "text-foreground";
   };
+
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardHeader>
+            <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl">Exam Submitted!</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Your exam has been submitted successfully.
+            </p>
+            {finalScore !== null && (
+               <div className="py-4">
+                 <div className="text-4xl font-bold text-primary">{finalScore}%</div>
+                 <div className="text-sm text-muted-foreground">Your Score</div>
+               </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              A confirmation email has been sent to your registered address.
+            </p>
+            <Button onClick={() => router.push("/")} className="w-full mt-4">
+              Return to Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,14 +288,15 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
               <CardContent>
                 <div className="grid grid-cols-5 lg:grid-cols-1 gap-2">
                   {exam.questions.map((question, index) => {
-                    const isAnswered = answers[question.id] !== undefined;
+                    const isAnswered = answers[question._id || ""] !== undefined;
                     const isCurrent = index === currentQuestionIndex;
 
                     return (
                       <Button
-                        key={question.id}
+                        key={question._id || index}
                         variant={isCurrent ? "default" : "outline"}
                         size="sm"
+// 
                         className={`relative ${isAnswered && !isCurrent ? "border-green-500" : ""}`}
                         onClick={() => handleQuestionNavigation(index)}
                       >
@@ -290,7 +331,7 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
                     <CardTitle className="text-lg mb-2">
                       Question {currentQuestionIndex + 1}
                     </CardTitle>
-                    <p className="text-base leading-relaxed">{currentQuestion.question}</p>
+                    <p className="text-base leading-relaxed">{currentQuestion.questionText}</p>
                   </div>
                   <Badge variant="secondary">
                     {currentQuestion.points} {currentQuestion.points === 1 ? "point" : "points"}
@@ -300,8 +341,8 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
               <CardContent className="space-y-6">
                 {currentQuestion.type === "multiple-choice" ? (
                   <RadioGroup
-                    value={answers[currentQuestion.id] || ""}
-                    onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                    value={answers[currentQuestionId] || ""}
+                    onValueChange={(value) => handleAnswerChange(currentQuestionId, value)}
                   >
                     {currentQuestion.options?.map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
@@ -318,8 +359,8 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
                     <Textarea
                       id="essay-answer"
                       placeholder="Type your answer here..."
-                      value={answers[currentQuestion.id] || ""}
-                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                      value={answers[currentQuestionId] || ""}
+                      onChange={(e) => handleAnswerChange(currentQuestionId, e.target.value)}
                       className="min-h-32"
                     />
                   </div>
@@ -336,7 +377,7 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
                   </Button>
 
                   <div className="text-sm text-muted-foreground">
-                    {answers[currentQuestion.id] ? (
+                    {answers[currentQuestionId] ? (
                       <span className="text-green-600 flex items-center">
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Answered

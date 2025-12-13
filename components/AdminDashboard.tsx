@@ -19,7 +19,7 @@ import {
   FileText,
 } from "lucide-react";
 import { ExamManagement } from "@/components/examiner/ExamManagement";
-import { StudentManagement } from "@/components/examiner/StudentManagement";
+import { ExamineeManagement } from "@/components/examiner/ExamineeManagement";
 import { ResultsAnalytics } from "@/components/examiner/ResultsAnalytics";
 import { NotificationCenter } from "@/components/notification-center";
 import {
@@ -45,20 +45,26 @@ export function AdminDashboard() {
   const [results, setResults] = useState<ExamResult[]>([]);
   const [activeSection, setActiveSection] = useState("overview");
 
-  useEffect(() => {
+  const loadData = async () => {
     if (user) {
-      setExams(examService.getExams(user.id));
-      setStudents(examService.getStudents());
-      setResults(examService.getExamResults());
+       try {
+         const fetchedExams = await examService.getExams();
+         setExams(fetchedExams);
+         setStudents(examService.getStudents());
+         const fetchedResults = await examService.getExamResults();
+         setResults(fetchedResults);
+       } catch (error) {
+         console.error("Failed to load data", error);
+       }
     }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [user]);
 
   const refreshData = () => {
-    if (user) {
-      setExams(examService.getExams(user.id));
-      setStudents(examService.getStudents());
-      setResults(examService.getExamResults());
-    }
+    loadData();
   };
 
   const totalStudents = students.length;
@@ -66,7 +72,7 @@ export function AdminDashboard() {
   const completedExams = results.length;
   const averageScore =
     results.length > 0
-      ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
+      ? Math.round(results.reduce((sum, r) => sum + (r.percentage || 0), 0) / results.length)
       : 0;
 
   const renderContent = () => {
@@ -155,15 +161,17 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {results.slice(0, 5).map((result) => (
-                    <div key={result.id} className="flex items-center justify-between">
+                    <div key={result._id} className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{result.studentName}</p>
+                        <p className="font-medium">
+                          {typeof result.examineeId === 'object' ? (result.examineeId as any).name : 'Unknown Student'}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {exams.find((e) => e.id === result.examId)?.title || "Unknown Exam"}
+                          {exams.find((e) => e.id === (typeof result.examId === 'object' ? (result.examId as any)._id : result.examId))?.title || "Unknown Exam"}
                         </p>
                       </div>
-                      <Badge variant={result.percentage >= 70 ? "default" : "destructive"}>
-                        {result.percentage}%
+                      <Badge variant={(result.percentage || 0) >= 70 ? "default" : "destructive"}>
+                        {result.percentage || 0}%
                       </Badge>
                     </div>
                   ))}
@@ -178,7 +186,7 @@ export function AdminDashboard() {
       case "exams":
         return <ExamManagement exams={exams} onRefresh={refreshData} />;
       case "students":
-        return <StudentManagement students={students} exams={exams} onRefresh={refreshData} />;
+        return <ExamineeManagement students={students} exams={exams} onRefresh={refreshData} />;
       case "results":
         return <ResultsAnalytics results={results} exams={exams} />;
       default:
