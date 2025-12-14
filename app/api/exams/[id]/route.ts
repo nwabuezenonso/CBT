@@ -4,18 +4,11 @@ import Exam from '@/models/Exam';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    
-    // params needs to be awaited in newer Next.js versions if it's a promise, 
-    // but typically in standard app dir it's an object or promise depending on version. 
-    // To be safe in current Next 15 world or late 14:
-    // const { id } = await params; 
-    // However, the signature above is standard for 14. 
-    // Let's assume standard object for now or await it if it complains.
-    const id = params.id;
+    const { id } = await params;
 
     const exam = await Exam.findById(id);
 
@@ -31,11 +24,11 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const id = params.id;
+    const { id } = await params;
     const updates = await req.json();
 
     // Sync status with isActive if provided
@@ -61,11 +54,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const id = params.id;
+    const { id } = await params;
 
     const exam = await Exam.findByIdAndDelete(id);
 

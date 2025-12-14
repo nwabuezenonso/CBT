@@ -23,24 +23,24 @@ export function NotificationCenter() {
     }
   }, [user])
 
-  const loadNotifications = () => {
+  const loadNotifications = async () => {
     if (!user) return
 
-    const userNotifications = notificationService.getNotifications(user.id)
-    const unread = notificationService.getUnreadCount(user.id)
+    const userNotifications = await notificationService.getNotifications(user.id)
+    const unread = await notificationService.getUnreadCount(user.id)
 
     setNotifications(userNotifications)
     setUnreadCount(unread)
   }
 
-  const handleMarkAsRead = (notificationId: string) => {
-    notificationService.markAsRead(notificationId)
+  const handleMarkAsRead = async (notificationId: string) => {
+    await notificationService.markAsRead(notificationId)
     loadNotifications()
   }
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     if (user) {
-      notificationService.markAllAsRead(user.id)
+      await notificationService.markAllAsRead(user.id)
       loadNotifications()
     }
   }

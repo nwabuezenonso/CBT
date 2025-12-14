@@ -32,7 +32,10 @@ export function ResultsAnalytics({ results, exams }: ResultsAnalyticsProps) {
   const [selectedExam, setSelectedExam] = useState<string>("all");
 
   const filteredResults =
-    selectedExam === "all" ? results : results.filter((r) => r.examId === selectedExam);
+    selectedExam === "all" ? results : results.filter((r) => {
+       const rExamId = typeof r.examId === 'object' ? (r.examId as any)._id || (r.examId as any).id : r.examId;
+       return rExamId === selectedExam;
+    });
 
   const getExamTitle = (examId: string) => {
     return exams.find((e) => e.id === examId)?.title || "Unknown Exam";
@@ -42,59 +45,62 @@ export function ResultsAnalytics({ results, exams }: ResultsAnalyticsProps) {
   const averageScore =
     filteredResults.length > 0
       ? Math.round(
-          filteredResults.reduce((sum, r) => sum + r.percentage, 0) / filteredResults.length
+          filteredResults.reduce((sum, r) => sum + (r.percentage || 0), 0) / filteredResults.length
         )
       : 0;
 
   const passRate =
     filteredResults.length > 0
       ? Math.round(
-          (filteredResults.filter((r) => r.percentage >= 70).length / filteredResults.length) * 100
+          (filteredResults.filter((r) => (r.percentage || 0) >= 70).length / filteredResults.length) * 100
         )
       : 0;
-
+      
   const averageTime =
     filteredResults.length > 0
       ? Math.round(
-          filteredResults.reduce((sum, r) => sum + r.timeSpent, 0) / filteredResults.length
+          filteredResults.reduce((sum, r) => sum + ((r as any).timeSpent || 0), 0) / filteredResults.length
         )
       : 0;
-
+  
   // Prepare chart data
   const scoreDistribution = [
     {
       range: "90-100%",
-      count: filteredResults.filter((r) => r.percentage >= 90).length,
+      count: filteredResults.filter((r) => (r.percentage || 0) >= 90).length,
       color: "#22c55e",
     },
     {
       range: "80-89%",
-      count: filteredResults.filter((r) => r.percentage >= 80 && r.percentage < 90).length,
+      count: filteredResults.filter((r) => (r.percentage || 0) >= 80 && (r.percentage || 0) < 90).length,
       color: "#84cc16",
     },
     {
       range: "70-79%",
-      count: filteredResults.filter((r) => r.percentage >= 70 && r.percentage < 80).length,
+      count: filteredResults.filter((r) => (r.percentage || 0) >= 70 && (r.percentage || 0) < 80).length,
       color: "#eab308",
     },
     {
       range: "60-69%",
-      count: filteredResults.filter((r) => r.percentage >= 60 && r.percentage < 70).length,
+      count: filteredResults.filter((r) => (r.percentage || 0) >= 60 && (r.percentage || 0) < 70).length,
       color: "#f97316",
     },
     {
       range: "Below 60%",
-      count: filteredResults.filter((r) => r.percentage < 60).length,
+      count: filteredResults.filter((r) => (r.percentage || 0) < 60).length,
       color: "#ef4444",
     },
   ];
 
   const examPerformance = exams
     .map((exam) => {
-      const examResults = results.filter((r) => r.examId === exam.id);
+      const examResults = results.filter((r) => {
+          const rExamId = typeof r.examId === 'object' ? (r.examId as any)._id || (r.examId as any).id : r.examId;
+          return rExamId === exam.id || rExamId === exam._id;
+      });
       const avgScore =
         examResults.length > 0
-          ? Math.round(examResults.reduce((sum, r) => sum + r.percentage, 0) / examResults.length)
+          ? Math.round(examResults.reduce((sum, r) => sum + (r.percentage || 0), 0) / examResults.length)
           : 0;
 
       return {
@@ -119,7 +125,7 @@ export function ResultsAnalytics({ results, exams }: ResultsAnalyticsProps) {
           <SelectContent>
             <SelectItem value="all">All Exams</SelectItem>
             {exams.map((exam) => (
-              <SelectItem key={exam.id} value={exam.id}>
+              <SelectItem key={exam.id || exam._id} value={exam.id || exam._id}>
                 {exam.title}
               </SelectItem>
             ))}
@@ -239,25 +245,29 @@ export function ResultsAnalytics({ results, exams }: ResultsAnalyticsProps) {
               <TableBody>
                 {filteredResults
                   .sort(
-                    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+                    (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
                   )
                   .slice(0, 10)
-                  .map((result) => (
-                    <TableRow key={result.id}>
-                      <TableCell className="font-medium">{result.studentName}</TableCell>
-                      <TableCell>{getExamTitle(result.examId)}</TableCell>
+                  .map((result) => {
+                     const rExamId = typeof result.examId === 'object' ? (result.examId as any)._id || (result.examId as any).id : result.examId;
+                     const studentName = typeof result.examineeId === 'object' ? (result.examineeId as any).name : 'Unknown Student';
+                     const key = result._id; 
+                     return (
+                    <TableRow key={key}>
+                      <TableCell className="font-medium">{studentName}</TableCell>
+                      <TableCell>{getExamTitle(rExamId)}</TableCell>
                       <TableCell>
-                        {result.score}/{result.totalPoints}
+                        {result.score}/{result.totalQuestions}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={result.percentage >= 70 ? "default" : "destructive"}>
-                          {result.percentage}%
+                        <Badge variant={(result.percentage || 0) >= 70 ? "default" : "destructive"}>
+                          {result.percentage || 0}%
                         </Badge>
                       </TableCell>
-                      <TableCell>{result.timeSpent} min</TableCell>
-                      <TableCell>{new Date(result.completedAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{(result as any).timeSpent || 0} min</TableCell>
+                      <TableCell>{new Date(result.submittedAt).toLocaleDateString()}</TableCell>
                     </TableRow>
-                  ))}
+                  )})}
               </TableBody>
             </Table>
           ) : (
