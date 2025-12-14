@@ -100,8 +100,8 @@ const CBTWaitlistPage: React.FC = () => {
             <div className="px-4 py-4 space-y-3">
               <a href="#features" className="block px-3 py-2 text-base font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-blue-600">Features</a>
               <a href="#how-it-works" className="block px-3 py-2 text-base font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-blue-600">How it Works</a>
-              <Link href="/auth" className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50">Login</Link>
-              <Link href="/auth?mode=signup" className="block w-full">
+              <Link href="/auth/login" className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50">Login</Link>
+              <Link href="/auth/register" className="block w-full">
                  <button className="w-full mt-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-medium shadow-md hover:bg-blue-700">
                     Get Started Free
                  </button>
@@ -137,14 +137,9 @@ const CBTWaitlistPage: React.FC = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <Link href="/auth?mode=signup" className="w-full sm:w-auto">
+                <Link href="/auth/register" className="w-full sm:w-auto">
                     <button className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all duration-200 flex items-center justify-center">
                     Start as Examiner
-                    </button>
-                </Link>
-                <Link href="/auth" className="w-full sm:w-auto">
-                    <button className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center">
-                    Join an Exam
                     </button>
                 </Link>
               </div>
