@@ -19,11 +19,22 @@ export function Overview() {
   const [activeSection, setActiveSection] = useState("overview");
 
   useEffect(() => {
-    if (user) {
-      setExams(examService.getExams(user.id));
-      setStudents(examService.getStudents());
-      setResults(examService.getExamResults());
+    async function fetchData() {
+      if (user) {
+        try {
+          const [fetchedExams, fetchedResults] = await Promise.all([
+            examService.getExams(),
+            examService.getExamResults()
+          ]);
+          setExams(fetchedExams);
+          setStudents(examService.getStudents());
+          setResults(fetchedResults);
+        } catch (error) {
+          console.error("Failed to fetch overview data", error);
+        }
+      }
     }
+    fetchData();
   }, [user]);
 
   const totalStudents = students.length;
@@ -31,7 +42,7 @@ export function Overview() {
   const completedExams = results.length;
   const averageScore =
     results.length > 0
-      ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
+      ? Math.round(results.reduce((sum, r) => sum + (r.percentage || 0), 0) / results.length)
       : 0;
 
   return (
@@ -116,19 +127,30 @@ export function Overview() {
             <CardDescription>Latest exam submissions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {results.slice(0, 5).map((result) => (
-              <div key={result.id} className="flex items-center justify-between">
+            {results.slice(0, 5).map((result) => {
+               const studentName = typeof result.examineeId === 'object' && result.examineeId 
+                  ? (result.examineeId as any).name 
+                  : 'Unknown Student';
+               
+               const examTitle = typeof result.examId === 'object' && result.examId
+                  ? (result.examId as any).title
+                  : (exams.find((e) => e.id === result.examId) || exams.find((e) => e._id === result.examId))?.title || "Unknown Exam";
+                
+               const percentage = result.percentage ?? (result.totalQuestions > 0 ? Math.round((result.score / result.totalQuestions) * 100) : 0);
+
+               return (
+              <div key={result._id} className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{result.studentName}</p>
+                  <p className="font-medium">{studentName}</p>
                   <p className="text-sm text-muted-foreground">
-                    {exams.find((e) => e.id === result.examId)?.title || "Unknown Exam"}
+                    {examTitle}
                   </p>
                 </div>
-                <Badge variant={result.percentage >= 70 ? "default" : "destructive"}>
-                  {result.percentage}%
+                <Badge variant={percentage >= 70 ? "default" : "destructive"}>
+                  {percentage}%
                 </Badge>
               </div>
-            ))}
+            )})}
             {results.length === 0 && (
               <p className="text-muted-foreground text-center py-4">No results yet</p>
             )}

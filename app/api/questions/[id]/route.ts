@@ -3,14 +3,15 @@ import dbConnect from '@/lib/db';
 import Question from '@/models/question';
 import { verifyToken } from '@/lib/auth';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
+    const { id } = await params;
     const body = await req.json();
-    const question = await Question.findByIdAndUpdate(params.id, body, { new: true });
+    const question = await Question.findByIdAndUpdate(id, body, { new: true });
 
     if (!question) return NextResponse.json({ message: 'Question not found' }, { status: 404 });
 
@@ -20,13 +21,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    const question = await Question.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const question = await Question.findByIdAndDelete(id);
 
     if (!question) return NextResponse.json({ message: 'Question not found' }, { status: 404 });
 

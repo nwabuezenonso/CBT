@@ -3,13 +3,14 @@ import dbConnect from '@/lib/db';
 import RegistrationForm from '@/models/RegistrationForm';
 
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     const body = await req.json();
     
     // params.id is the FORM ID
-    const form = await RegistrationForm.findById(params.id);
+    const { id } = await params;
+    const form = await RegistrationForm.findById(id);
     if (!form) {
       return NextResponse.json({ message: "Registration form not found" }, { status: 404 });
     }
