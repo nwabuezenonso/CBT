@@ -87,12 +87,9 @@ export function AuthForm({ defaultIsLogin }: AuthFormProps) {
 
       if (isLogin) {
         toast.success('Signed in successfully');
-        // Redirect based on role
-        if (result.role === 'examiner') {
-          router.push('/dashboard/examiner');
-        } else {
-          router.push('/dashboard/examinee');
-        }
+      
+        router.push('/dashboard/examiner');
+      
       } else {
         toast.success('Account created successfully');
         // Redirect to login page after successful registration
