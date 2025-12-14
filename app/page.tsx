@@ -76,7 +76,7 @@ const CBTWaitlistPage: React.FC = () => {
                  <Link href="/auth/login" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Login</Link>
               </nav>
               <div className="h-6 w-px bg-gray-200"></div>
-              <Link href="/auth/signup">
+              <Link href="/auth/register">
                 <button className="bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition-all hover:shadow-lg font-medium text-sm flex items-center group">
                   Get Started
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
