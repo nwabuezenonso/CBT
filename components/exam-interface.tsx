@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Clock, CheckCircle, Circle, AlertTriangle, Send } from "lucide-react";
+import { Clock, CheckCircle, Circle, AlertTriangle, Send, Maximize, ShieldAlert } from "lucide-react";
 // import { useToast } from "@/hooks/use-toast";
 
 import { toast } from "sonner";
@@ -42,6 +42,12 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [startTime] = useState(Date.now());
+  
+  // Security State
+  const [violationCount, setViolationCount] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(true); // Default true to avoid flash, checked in effect
+  const [securityModalOpen, setSecurityModalOpen] = useState(true);
+  const MAX_VIOLATIONS = 3;
 
   const currentQuestion = exam.questions[currentQuestionIndex];
   const currentQuestionId = currentQuestion?._id || "";
@@ -110,6 +116,76 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
     };
     loadProgress();
   }, [exam.id]);
+
+  // Security: Fullscreen & Tab Switching Monitor
+  useEffect(() => {
+    // 1. Fullscreen Enforcer
+    const handleFullscreenChange = () => {
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      if (!isFull && !isSubmitted) {
+        setSecurityModalOpen(true);
+      }
+    };
+
+    // 2. Tab Switching / Visibility Monitor
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isSubmitted && !showSubmitDialog) {
+        recordViolation("Tab switching detected");
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (!isSubmitted && !showSubmitDialog && !document.fullscreenElement) {
+         // Only count blur if not in fullscreen (fullscreen change handles its own)
+         // or if user alt-tabs out of fullscreen
+         // recordViolation("Window lost focus"); 
+         // Blur can be flaky, relying on visibilitychange is often safer for "cheating", 
+         // but strict mode might want blur. Let's stick to visibility for now to avoid false positives.
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, [isSubmitted, showSubmitDialog]);
+
+  const recordViolation = (reason: string) => {
+    setViolationCount((prev) => {
+      const newCount = prev + 1;
+      
+      if (newCount >= MAX_VIOLATIONS) {
+        toast.error("Exam Terminated", {
+           description: "Maximum security violations reached. Your exam is being submitted.",
+           duration: 5000
+        });
+        handleAutoSubmit();
+      } else {
+        toast.warning(`Security Warning (${newCount}/${MAX_VIOLATIONS})`, {
+          description: `${reason}. Please stay on this tab and keep fullscreen. Next violation may terminate your exam.`,
+          duration: 5000,
+        });
+      }
+      return newCount;
+    });
+  };
+
+  const enterFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+      setSecurityModalOpen(false);
+    } catch (err) {
+      toast.error("Fullscreen Failed", {
+        description: "Please manually enable fullscreen to continue."
+      });
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -434,6 +510,37 @@ export function ExamInterface({ exam }: ExamInterfaceProps) {
                 {isSubmitting ? "Submitting..." : "Submit Exam"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      
+      {/* Security Check Modal */}
+      <Dialog open={securityModalOpen && !isSubmitted} onOpenChange={(open) => {
+        // Prevent closing if not fullscreen
+        if (!open && !document.fullscreenElement) return;
+        setSecurityModalOpen(open);
+      }}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+               <ShieldAlert className="w-5 h-5" />
+               Exam Security Check
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+               This is a secure exam environment. 
+               <ul className="list-disc pl-5 mt-2 space-y-1 text-foreground">
+                 <li>Full screen mode is required.</li>
+                 <li>Tab switching is monitored.</li>
+                 <li>Leaving the exam window {MAX_VIOLATIONS} times will result in <strong>automatic submission</strong>.</li>
+               </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button onClick={enterFullscreen} className="w-full" size="lg">
+              <Maximize className="w-4 h-4 mr-2" />
+              Enter Fullscreen to Start/Resume
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

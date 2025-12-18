@@ -6,15 +6,25 @@ if (!JWT_SECRET) {
   throw new Error('Please define the JWT_SECRET environment variable inside .env');
 }
 
-export const signToken = (id: string, role: string) => {
-  return jwt.sign({ id, role }, JWT_SECRET, {
-    expiresIn: '30d',
-  });
+export interface JWTPayload {
+  userId: string;
+  role: string;
+  status: string;
+  organizationId?: string;
+}
+
+export const signToken = (userId: string, role: string, status: string, organizationId?: string) => {
+  return jwt.sign(
+    { userId, role, status, organizationId },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
 };
 
-export const verifyToken = (token: string) => {
+export const verifyToken = (token: string): JWTPayload | null => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    return decoded;
   } catch (error) {
     return null;
   }

@@ -1,16 +1,36 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
+import Student from '@/models/Student';
 import { signToken } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { name, email, password, role } = await req.json();
+    const { 
+      name, 
+      email, 
+      password, 
+      role, 
+      organizationId,
+      phone,
+      dateOfBirth,
+      guardianName,
+      guardianPhone,
+      guardianEmail,
+    } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
         { message: 'Please provide all required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate organization for non-super-admin roles
+    if (role !== 'SUPER_ADMIN' && !organizationId) {
+      return NextResponse.json(
+        { message: 'Organization is required' },
         { status: 400 }
       );
     }
@@ -24,34 +44,42 @@ export async function POST(req: Request) {
       );
     }
 
+    // Create user with PENDING status (will need admin approval)
     const user = await User.create({
       name,
       email,
       password,
-      role: role || 'examinee', // Default to examinee if not provided
+      role: role || 'STUDENT',
+      organizationId: role === 'SUPER_ADMIN' ? null : organizationId,
+      status: 'PENDING', // Default to PENDING for new users
+      phone,
     });
 
-    const token = signToken(user._id, user.role);
+    // If student, create student profile
+    if (user.role === 'STUDENT') {
+      await Student.create({
+        userId: user._id,
+        organizationId,
+        dateOfBirth,
+        guardianName,
+        guardianPhone,
+        guardianEmail,
+      });
+    }
 
+    // Don't generate token for PENDING users
+    // They need to wait for approval
     const response = NextResponse.json(
       {
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-        token,
+        status: user.status,
+        message: 'Registration successful. Please wait for admin approval.',
       },
       { status: 201 }
     );
-
-    // Also set as a cookie for easier frontend handling if needed
-    response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: '/',
-    });
 
     return response;
   } catch (error: any) {

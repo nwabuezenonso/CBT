@@ -19,8 +19,50 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['examiner', 'examinee'],
-    default: 'examinee',
+    enum: ['SUPER_ADMIN', 'ORG_ADMIN', 'TEACHER', 'STUDENT'],
+    default: 'STUDENT',
+  },
+  organizationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Organization',
+    required: function() {
+      // Super admins don't need organization
+      return this.role !== 'SUPER_ADMIN';
+    },
+  },
+  status: {
+    type: String,
+    enum: ['PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED'],
+    default: 'PENDING',
+  },
+  phone: {
+    type: String,
+    required: false,
+  },
+  profilePictureUrl: {
+    type: String,
+    required: false,
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false,
+  },
+  approvedAt: {
+    type: Date,
+    required: false,
+  },
+  lastLogin: {
+    type: Date,
+    required: false,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 
@@ -31,6 +73,12 @@ UserSchema.pre('save', async function (next) {
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Update timestamp on save
+UserSchema.pre('save', function (next) {
+  this.updatedAt = new Date();
   next();
 });
 

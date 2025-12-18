@@ -1,49 +1,117 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
+import ExamQuestion from '@/models/ExamQuestion';
 import { verifyToken } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
+// POST /api/exams - Create new exam
 export async function POST(req: Request) {
   try {
     await dbConnect();
     
-    // Auth Check
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     
-    // Ideally we verify and get user ID
-    // simplified for now: assume middleware handles or we verify here
-    // In a real app, use a proper session wrapper
-    // For now, let's just create.
     const decoded = verifyToken(token);
-    // @ts-ignore
-    if (!decoded || decoded.role !== 'examiner') {
-      return NextResponse.json({ message: 'Forbidden: Examiners only' }, { status: 403 });
+    if (!decoded || !decoded.organizationId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    
+    const {
+      title,
+      description,
+      subject,
+      duration,
+      instructions,
+      startTime,
+      endTime,
+      shuffleQuestions,
+      shuffleOptions,
+      showResultsImmediately,
+      allowReview,
+      maxAttempts,
+      questions // Array of { questionId, marks }
+    } = body;
+
+    if (!title || !subject || !duration || !questions || questions.length === 0) {
+      return NextResponse.json(
+        { message: 'Please provide title, subject, duration and at least one question.' },
+        { status: 400 }
+      );
+    }
+
+    // 1. Create Exam
     const exam = await Exam.create({
-      ...body,
-      // @ts-ignore
-      examinerId: decoded.id,
+      title,
+      description,
+      subject,
+      duration,
+      instructions,
+      startTime, // Can be null if always available
+      endTime,
+      shuffleQuestions,
+      shuffleOptions,
+      showResultsImmediately,
+      allowReview,
+      maxAttempts,
+      organizationId: decoded.organizationId,
+      createdBy: decoded.userId,
+      totalMarks: questions.reduce((sum: number, q: any) => sum + (q.marks || 1), 0),
     });
 
-    return NextResponse.json(exam, { status: 201 });
+    // 2. Create ExamQuestions
+    const examQuestionPromises = questions.map((q: any, index: number) => {
+      return ExamQuestion.create({
+        examId: exam._id,
+        questionId: q.questionId,
+        questionOrder: index + 1,
+        marks: q.marks || 1,
+      });
+    });
+
+    await Promise.all(examQuestionPromises);
+
+    return NextResponse.json({ 
+      message: 'Exam created successfully', 
+      examId: exam._id 
+    }, { status: 201 });
+
   } catch (error: any) {
+    console.error('Create Exam Error:', error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
 
+// GET /api/exams - List exams
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const url = new URL(req.url);
-    const role = url.searchParams.get('role'); // e.g. ?role=examiner&userId=...
+    const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
+    if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     
-    // In real app, filter by logged in user
-    // For now, just return all for simplicity or public ones
-    const exams = await Exam.find({ status: { $ne: 'archived' } }).sort({ createdAt: -1 });
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.organizationId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const subject = searchParams.get('subject');
+
+    const query: any = { organizationId: decoded.organizationId };
+    
+    // If user is a teacher/examiner, only show their own exams
+    if (decoded.role === 'TEACHER' || decoded.role === 'examiner') {
+      query.createdBy = decoded.userId;
+    }
+
+    if (subject) query.subject = subject;
+
+    const exams = await Exam.find(query)
+      .populate('createdBy', 'name')
+      .sort({ createdAt: -1 });
 
     return NextResponse.json(exams);
   } catch (error: any) {

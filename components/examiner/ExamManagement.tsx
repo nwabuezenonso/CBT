@@ -97,6 +97,7 @@ export function ExamManagement({ exams, onRefresh }: ExamManagementProps) {
 
   const [formData, setFormData] = useState({
     title: "",
+    subject: "",
     description: "",
     duration: 60,
     scheduledDate: "",
@@ -119,6 +120,7 @@ export function ExamManagement({ exams, onRefresh }: ExamManagementProps) {
   const resetForm = () => {
     setFormData({
       title: "",
+      subject: "",
       description: "",
       duration: 60,
       scheduledDate: "",
@@ -137,7 +139,7 @@ export function ExamManagement({ exams, onRefresh }: ExamManagementProps) {
   };
 
   const handleCreateExamInfo = () => { 
-    if (!user || !formData.title) {
+    if (!user || !formData.title || !formData.subject) {
       toast.error("Error", {
         description: "Please fill in all required fields.",
       });
@@ -225,6 +227,7 @@ export function ExamManagement({ exams, onRefresh }: ExamManagementProps) {
     setQuestions(exam.questions);
     setFormData({
       title: exam.title,
+      subject: exam.subject || "",
       description: exam.description,
       duration: exam.duration,
       scheduledDate: exam.scheduledDate || "",
@@ -417,46 +420,56 @@ export function ExamManagement({ exams, onRefresh }: ExamManagementProps) {
               <DialogDescription>Set up your exam basic information</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Exam Title</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g. Midterm Mathematics"
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Exam Title</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. Midterm Mathematics"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input
+                      id="subject"
+                      value={formData.subject}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, subject: e.target.value }))}
+                      placeholder="e.g. Mathematics"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Duration (minutes)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      value={formData.duration || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          duration: Number.parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={formData.duration || ""}
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        duration: Number.parseInt(e.target.value) || 0,
-                      }))
+                      setFormData((prev) => ({ ...prev, description: e.target.value }))
                     }
+                    placeholder="Provide brief instructions..."
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  placeholder="Provide brief instructions..."
-                />
-              </div>
-             </div>
              
              <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>

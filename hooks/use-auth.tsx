@@ -15,7 +15,7 @@ interface AuthContextType {
     name: string,
     role: "examiner" | "examinee"
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   loading: boolean;
 }
 
@@ -36,7 +36,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
         }
     };
+    
+    // Listen for immediate user data from login
+    const handleUserLoggedIn = (event: CustomEvent) => {
+      setUser(event.detail);
+      setLoading(false);
+    };
+    
+    window.addEventListener('user-logged-in', handleUserLoggedIn as EventListener);
     initAuth();
+    
+    return () => {
+      window.removeEventListener('user-logged-in', handleUserLoggedIn as EventListener);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -54,9 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    console.log("...Logging out")
+    await authService.logout();
+
+  
     setUser(null);
+    window.location.href = '/auth/login';
   };
 
   return (

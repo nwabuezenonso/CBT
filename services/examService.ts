@@ -15,6 +15,7 @@ export interface Exam {
   _id: string;
   id?: string;
   title: string;
+  subject: string;
   description: string;
   duration: number;
   questions: Question[];
@@ -88,7 +89,10 @@ export const examService = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(examData),
       });
-      if (!res.ok) throw new Error('Failed to create exam');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to create exam');
+      }
       return res.json();
   },
 

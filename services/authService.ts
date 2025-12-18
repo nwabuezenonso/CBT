@@ -2,7 +2,9 @@ export interface User {
   id: string
   email: string
   name: string
-  role: "examiner" | "examinee"
+  role: "examiner" | "examinee" | "TEACHER" | "STUDENT" | "ORG_ADMIN" | "SUPER_ADMIN"
+  status?: string
+  organizationId?: string
   createdAt?: string
 }
 
@@ -30,6 +32,8 @@ export const authService = {
         name: data.name,
         email: data.email,
         role: data.role,
+        status: data.status,
+        organizationId: data.organizationId,
         createdAt: data.createdAt
     };
     

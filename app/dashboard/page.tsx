@@ -36,10 +36,18 @@ export default function DashboardPage() {
     return null;
   }
 
-  if (user.role !== "examiner") {
-      router.push("/");
-      return null;
+  if (user.role === 'SUPER_ADMIN') {
+    router.push('/dashboard/admin');
+  } else if (user.role === 'ORG_ADMIN') {
+    router.push('/dashboard/org-admin');
+  } else if (user.role === 'TEACHER' || user.role === 'examiner') {
+    router.push('/dashboard/examiner');
+  } else if (user.role === 'STUDENT') {
+    router.push('/dashboard/student');
+  } else {
+    router.push('/');
   }
+  return null;
 
   return <Overview />;
 }

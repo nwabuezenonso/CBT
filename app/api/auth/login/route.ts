@@ -24,7 +24,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const token = signToken(user._id, user.role);
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = signToken(
+      user._id.toString(),
+      user.role,
+      user.status,
+      user.organizationId?.toString()
+    );
 
     const response = NextResponse.json(
       {
@@ -32,6 +41,8 @@ export async function POST(req: Request) {
         name: user.name,
         email: user.email,
         role: user.role,
+        status: user.status,
+        organizationId: user.organizationId,
         token,
       },
       { status: 200 }

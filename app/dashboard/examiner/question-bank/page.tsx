@@ -1,5 +1,5 @@
-import { QuestionBankManagement } from "@/components/examiner/QuestionBankManagement";
+import { QuestionBank } from "@/components/teacher/QuestionBank";
 
 export default function QuestionBankPage() {
-  return <QuestionBankManagement />;
+  return <QuestionBank />;
 }

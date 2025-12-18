@@ -64,7 +64,22 @@ const examinerSidebarGroups = [
     }
 ];
 
-// ... imports ...
+const orgAdminSidebarGroups = [
+  {
+    group: "Main",
+    items: [
+      { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/dashboard/org-admin" },
+      { id: "teachers", label: "Teachers", icon: Users, path: "/dashboard/org-admin/teachers" },
+      { id: "students", label: "Students", icon: Users, path: "/dashboard/org-admin/students" },
+    ]
+  },
+  {
+    group: "Settings",
+    items: [
+       { id: "settings", label: "Settings", icon: Settings, path: "/dashboard/org-admin/settings" },
+    ]
+  }
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, loading, isAuthenticated } = useAuth(); // Destructure loading and isAuthenticated
@@ -77,11 +92,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (mounted && !loading && !isAuthenticated) {
-      router.push("/auth/login");
-    }
-  }, [mounted, loading, isAuthenticated, router]);
+  console.log("user", user)
+
+  // DISABLED: This useEffect was causing a race condition
+  // The middleware already handles authentication redirects
+  // useEffect(() => {
+  //   if (mounted && !loading && !isAuthenticated) {
+  //     console.log("Logging out...")
+  //     router.push("/auth/login");
+  //   }
+  // }, [mounted, loading, isAuthenticated, router]);
 
   if (!mounted || loading) {
     return (
@@ -91,9 +111,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  if (!isAuthenticated || !user) {
-      return null; // Or a fallback, but useEffect will redirect
-  }
+  // if (!isAuthenticated || !user) {
+  //     return null; // Or a fallback, but useEffect will redirect
+  // }
 
 
 
@@ -130,7 +150,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <SidebarToggle />
               <SidebarContent>
                 <SidebarNav className="my-[80px]">
-                  {(pathname?.startsWith("/dashboard/examiner") ? examinerSidebarGroups : sidebarItems).map((group, index) => (
+                  {(pathname?.startsWith("/dashboard/examiner") 
+                    ? examinerSidebarGroups 
+                    : pathname?.startsWith("/dashboard/org-admin")
+                      ? orgAdminSidebarGroups
+                      : sidebarItems
+                  ).map((group, index) => (
                     <div key={group.group || index} className="mb-6">
                       <h4 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">
                         {group.group}
@@ -161,8 +186,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </SidebarContent>
             </div>
 
-            <SidebarFooter>
-              <Button variant="ghost" size="sm" onClick={logout} className="w-full justify-start">
+            <SidebarFooter onClick={logout}>
+              <Button variant="ghost" size="sm" className="w-full justify-start">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
