@@ -10,7 +10,7 @@ import { shuffleArray } from '@/lib/shuffle';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
@@ -20,7 +20,8 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const attemptId = params.id;
+    const { id } = await params;
+    const attemptId = id;
     const attempt = await ExamAttempt.findById(attemptId).populate({
         path: 'examAssignmentId',
         populate: { path: 'examId' }

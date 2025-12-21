@@ -7,10 +7,11 @@ import { verifyToken } from '@/lib/auth';
 // GET /api/questions/:id - Get question details including options
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
 
     // Verify auth
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
@@ -18,7 +19,7 @@ export async function GET(
     const decoded = verifyToken(token);
     if (!decoded) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     
-    const question = await Question.findById(params.id)
+    const question = await Question.findById(id)
       .populate('createdBy', 'name');
 
     if (!question) {
@@ -42,10 +43,11 @@ export async function GET(
 // PUT /api/questions/:id - Update question and options
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     const decoded = verifyToken(token);
@@ -62,7 +64,7 @@ export async function PUT(
       options
     } = body;
 
-    const question = await Question.findById(params.id);
+    const question = await Question.findById(id);
     if (!question) return NextResponse.json({ message: 'Question not found' }, { status: 404 });
 
     // Check permissions
@@ -117,16 +119,17 @@ export async function PUT(
 // DELETE /api/questions/:id - Delete question
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     const decoded = verifyToken(token);
     if (!decoded) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
-    const question = await Question.findById(params.id);
+    const question = await Question.findById(id);
     if (!question) return NextResponse.json({ message: 'Question not found' }, { status: 404 });
 
     if (question.organizationId.toString() !== decoded.organizationId && decoded.role !== 'SUPER_ADMIN') {
@@ -137,7 +140,7 @@ export async function DELETE(
     await AnswerOption.deleteMany({ questionId: question._id });
     
     // Delete the question
-    await Question.findByIdAndDelete(params.id);
+    await Question.findByIdAndDelete(id);
 
     return NextResponse.json({ message: 'Question deleted successfully' }, { status: 200 });
 

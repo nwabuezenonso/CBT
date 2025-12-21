@@ -6,12 +6,13 @@ import Student from '@/models/Student';
 // GET /api/classes/:id - Get class details
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     
-    const classObj = await Class.findById(params.id)
+    const classObj = await Class.findById(id)
       .populate('organizationId', 'name type')
       .populate('createdBy', 'name email');
 
@@ -34,14 +35,15 @@ export async function GET(
 // PATCH /api/classes/:id - Update class
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     const updates = await req.json();
 
     const classObj = await Class.findByIdAndUpdate(
-      params.id,
+      id,
       updates,
       { new: true, runValidators: true }
     );
@@ -65,13 +67,14 @@ export async function PATCH(
 // DELETE /api/classes/:id - Delete class
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     
     // Check if class has students
-    const studentsCount = await Student.countDocuments({ classId: params.id });
+    const studentsCount = await Student.countDocuments({ classId: id });
     
     if (studentsCount > 0) {
       return NextResponse.json(
@@ -80,7 +83,7 @@ export async function DELETE(
       );
     }
 
-    const classObj = await Class.findByIdAndDelete(params.id);
+    const classObj = await Class.findByIdAndDelete(id);
 
     if (!classObj) {
       return NextResponse.json(

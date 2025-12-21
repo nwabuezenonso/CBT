@@ -5,7 +5,7 @@ import User from '@/models/User';
 // PATCH /api/users/:id/approve - Approve a pending user
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
@@ -19,7 +19,8 @@ export async function PATCH(
       );
     }
 
-    const user = await User.findById(params.id);
+    const { id } = await params;
+    const user = await User.findById(id);
 
     if (!user) {
       return NextResponse.json(

@@ -5,10 +5,11 @@ import Student from '@/models/Student';
 // POST /api/classes/:id/students - Assign students to a class
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     
     const { studentIds } = await req.json();
 
@@ -22,7 +23,7 @@ export async function POST(
     // Update all students to assign them to this class
     const result = await Student.updateMany(
       { userId: { $in: studentIds } },
-      { classId: params.id }
+      { classId: id }
     );
 
     return NextResponse.json(
@@ -43,12 +44,13 @@ export async function POST(
 // GET /api/classes/:id/students - Get students in a class
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const { id } = await params;
     
-    const students = await Student.find({ classId: params.id })
+    const students = await Student.find({ classId: id })
       .populate('userId', 'name email phone status')
       .populate('organizationId', 'name')
       .sort({ createdAt: -1 });
