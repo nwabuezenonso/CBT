@@ -4,6 +4,7 @@ import { useState } from "react";
 import { examService, type Exam } from "@/services/examService";
 import { notificationService } from "@/lib/notification-service";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth"; // Added
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -35,10 +36,12 @@ import { toast } from "sonner";
 
 // Helper type until imported or unified
 interface Student {
-    id: string;
-    name: string;
-    email: string;
-    registeredAt: string;
+  id: string;
+  name: string;
+  email: string;
+  registeredAt: string;
+  status?: string;
+  className?: string; // Add className
 }
 
 interface ExamineeManagementProps {
@@ -54,6 +57,9 @@ export function ExamineeManagement({ students, exams, assignments = [], onRefres
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedExam, setSelectedExam] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadingApprove, setLoadingApprove] = useState<string | null>(null);
+
+  const { user } = useAuth(); // Need to know who is approving
 
   const filteredStudents = students.filter(
     (student) =>
@@ -61,35 +67,57 @@ export function ExamineeManagement({ students, exams, assignments = [], onRefres
       student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleApprove = async (studentId: string) => {
+    setLoadingApprove(studentId);
+    try {
+      const res = await fetch(`/api/users/${studentId}/approve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approvedBy: user?.id })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to approve');
+      }
+
+      toast.success("Student approved successfully");
+      onRefresh();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoadingApprove(null);
+    }
+  };
 
   const handleAssignExam = async () => {
     if (!selectedStudent || !selectedExam) return;
 
     try {
-        const exam = exams.find((e) => (e.id || e._id) === selectedExam);
-        if (!exam) return;
+      const exam = exams.find((e) => (e.id || e._id) === selectedExam);
+      if (!exam) return;
 
-        // 1. Assign in DB
-        const assignmentRes = await examService.assignExamToStudent(
-            { id: selectedStudent.id, name: selectedStudent.name, email: selectedStudent.email },
-            { id: exam.id || exam._id || "", title: exam.title }
-        );
-        
-        // 2. Email sent automatically by backend
-        
-        // 3. Notify UI
-        notificationService.notifyExamAssigned(selectedStudent.id, exam.title, exam.id || exam._id || ""); 
+      // 1. Assign in DB
+      const assignmentRes = await examService.assignExamToStudent(
+        { id: selectedStudent.id, name: selectedStudent.name, email: selectedStudent.email },
+        { id: exam.id || exam._id || "", title: exam.title }
+      );
 
-        toast.success("Exam Assigned & Email Sent", {
-            description: `Invitation sent to ${selectedStudent.email}`,
-        });
+      // 2. Email sent automatically by backend
 
-        setShowAssignDialog(false);
-        setSelectedStudent(null);
-        setSelectedExam("");
-        onRefresh();
+      // 3. Notify UI
+      notificationService.notifyExamAssigned(selectedStudent.id, exam.title, exam.id || exam._id || "");
+
+      toast.success("Exam Assigned & Email Sent", {
+        description: `Invitation sent to ${selectedStudent.email}`,
+      });
+
+      setShowAssignDialog(false);
+      setSelectedStudent(null);
+      setSelectedExam("");
+      onRefresh();
     } catch (error: any) {
-        toast.error("Assignment Failed", { description: error.message });
+      toast.error("Assignment Failed", { description: error.message });
     }
   };
 
@@ -165,6 +193,8 @@ export function ExamineeManagement({ students, exams, assignments = [], onRefres
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead>Assigned Exams</TableHead>
                   <TableHead>Actions</TableHead>
@@ -180,6 +210,12 @@ export function ExamineeManagement({ students, exams, assignments = [], onRefres
                         {student.email}
                       </div>
                     </TableCell>
+                    <TableCell>{student.className || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={student.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                        {student.status || 'UNKNOWN'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
@@ -187,62 +223,75 @@ export function ExamineeManagement({ students, exams, assignments = [], onRefres
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{getAssignedExamsCount(student.id)} exams</Badge>
+                      <Badge variant="outline">{getAssignedExamsCount(student.id)} exams</Badge>
                     </TableCell>
                     <TableCell>
-                      <Dialog
-                        open={showAssignDialog && selectedStudent?.id === student.id}
-                        onOpenChange={(open) => {
-                          setShowAssignDialog(open);
-                          if (open) setSelectedStudent(student);
-                          else setSelectedStudent(null);
-                        }}
-                      >
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Assign Exam
+                      <div className="flex items-center gap-2">
+                        <Dialog
+                          open={showAssignDialog && selectedStudent?.id === student.id}
+                          onOpenChange={(open) => {
+                            setShowAssignDialog(open);
+                            if (open) setSelectedStudent(student);
+                            else setSelectedStudent(null);
+                          }}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Assign
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Assign Exam to {student.name}</DialogTitle>
+                              <DialogDescription>
+                                Select an exam to assign to this student
+                              </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Select Exam</label>
+                                <Select value={selectedExam} onValueChange={setSelectedExam}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose an exam" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {exams
+                                      .filter((e) => e.isActive)
+                                      .map((exam) => (
+                                        <SelectItem key={exam.id ?? exam._id} value={exam.id ?? exam._id}>
+                                          {exam.title} ({exam.questions.length} questions,{" "}
+                                          {exam.duration} min)
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="flex justify-end space-x-2">
+                                <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+                                  Cancel
+                                </Button>
+                                <Button onClick={handleAssignExam} disabled={!selectedExam}>
+                                  Assign Exam
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        {student.status === 'PENDING' && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={loadingApprove === student.id}
+                            onClick={() => handleApprove(student.id)}
+                          >
+                            {loadingApprove === student.id ? "Approving..." : "Approve"}
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Assign Exam to {student.name}</DialogTitle>
-                            <DialogDescription>
-                              Select an exam to assign to this student
-                            </DialogDescription>
-                          </DialogHeader>
-
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Select Exam</label>
-                              <Select value={selectedExam} onValueChange={setSelectedExam}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose an exam" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {exams
-                                    .filter((e) => e.isActive)
-                                    .map((exam) => (
-                                      <SelectItem key={exam.id ?? exam._id} value={exam.id ?? exam._id}>
-                                        {exam.title} ({exam.questions.length} questions,{" "}
-                                        {exam.duration} min)
-                                      </SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
-                                Cancel
-                              </Button>
-                              <Button onClick={handleAssignExam} disabled={!selectedExam}>
-                                Assign Exam
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

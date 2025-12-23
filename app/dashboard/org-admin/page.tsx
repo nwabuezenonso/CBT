@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function OrgAdminDashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ teachers: 0, students: 0 });
+  const [stats, setStats] = useState({ examiners: 0, students: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function OrgAdminDashboard() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Organization Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back, {user?.name}. Manage your school's teachers and students.
+          Welcome back, {user?.name}. Manage your school's examiners and students.
         </p>
       </div>
 
@@ -52,12 +52,12 @@ export default function OrgAdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Examiners</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.teachers}</div>
-            <p className="text-xs text-muted-foreground">Registered teachers</p>
+            <div className="text-2xl font-bold">{stats.examiners}</div>
+            <p className="text-xs text-muted-foreground">Registered examiners</p>
           </CardContent>
         </Card>
 

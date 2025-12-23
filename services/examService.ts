@@ -38,21 +38,22 @@ export interface ExamResult {
 }
 
 export interface Student {
-  id: string;
+  id: string; // User ID
+  studentId?: string; // Profile ID
   name: string;
   email: string;
   registeredAt: string;
+  status?: string; // Add status
+  className?: string; // Add class name
 }
 
 export const examService = {
   // Mock Data Access for Admin Dashboard
-  getStudents: (): Student[] => {
-      // Mock data
-      return [
-        { id: "1", name: "Alice Johnson", email: "alice@example.com", registeredAt: "2023-11-01" },
-        { id: "2", name: "Bob Smith", email: "bob@example.com", registeredAt: "2023-11-05" },
-        { id: "3", name: "Charlie Davis", email: "charlie@example.com", registeredAt: "2023-11-10" },
-      ];
+  // Data Access for Dashboard
+  getStudents: async (): Promise<Student[]> => {
+    const res = await fetch('/api/students');
+    if (!res.ok) throw new Error('Failed to fetch students');
+    return res.json();
   },
 
   // Exam Management
@@ -71,8 +72,8 @@ export const examService = {
   getExam: async (id: string): Promise<Exam | null> => {
     const res = await fetch(`/api/exams/${id}`);
     if (!res.ok) {
-        if (res.status === 404) return null;
-        throw new Error('Failed to fetch exam');
+      if (res.status === 404) return null;
+      throw new Error('Failed to fetch exam');
     }
     const data = await res.json();
     return {
@@ -84,34 +85,34 @@ export const examService = {
   },
 
   createExam: async (examData: Partial<Exam>) => {
-      const res = await fetch('/api/exams', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(examData),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to create exam');
-      }
-      return res.json();
+    const res = await fetch('/api/exams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(examData),
+    });
+    // if (!res.ok) {
+    //   const errorData = await res.json();
+    //   throw new Error(errorData.message || 'Failed to create exam');
+    // }
+    return res.json();
   },
 
   updateExam: async (id: string, updates: Partial<Exam>) => {
-      const res = await fetch(`/api/exams/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updates),
-      });
-      if (!res.ok) throw new Error('Failed to update exam');
-      return res.json();
+    const res = await fetch(`/api/exams/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error('Failed to update exam');
+    return res.json();
   },
 
   deleteExam: async (id: string) => {
-      const res = await fetch(`/api/exams/${id}`, {
-          method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Failed to delete exam');
-      return res.json();
+    const res = await fetch(`/api/exams/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete exam');
+    return res.json();
   },
 
   // Results Management
@@ -121,10 +122,10 @@ export const examService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    
+
     if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Failed to submit exam');
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to submit exam');
     }
     return res.json();
   },
@@ -136,30 +137,30 @@ export const examService = {
   },
 
   assignExamToStudent: async (student: { id: string; name: string; email: string }, exam: { id: string; title: string }) => {
-     const res = await fetch('/api/assignments', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-             studentId: student.id,
-             studentName: student.name,
-             studentEmail: student.email,
-             examId: exam.id,
-             examTitle: exam.title
-         })
-     });
-     
-     if (!res.ok) {
-         const err = await res.json();
-         throw new Error(err.message || "Failed to assign exam");
-     }
-     return res.json();
+    const res = await fetch('/api/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: student.id,
+        studentName: student.name,
+        studentEmail: student.email,
+        examId: exam.id,
+        examTitle: exam.title
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || "Failed to assign exam");
+    }
+    return res.json();
   },
 
   getStudentAssignments: async (studentId?: string) => {
-      const url = studentId ? `/api/assignments?studentId=${studentId}` : '/api/assignments';
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch assignments");
-      return res.json();
+    const url = studentId ? `/api/assignments?studentId=${studentId}` : '/api/assignments';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch assignments");
+    return res.json();
   }
 };
 

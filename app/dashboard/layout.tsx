@@ -25,43 +25,44 @@ const sidebarItems = [
   {
     group: "Main",
     items: [
-       { id: "overview", label: "Overview", icon: BarChart3, path: "/dashboard" },
-       { id: "exams", label: "Exams", icon: FileText, path: "/dashboard/exams" },
-       { id: "students", label: "Students", icon: Users, path: "/dashboard/students" },
-       { id: "results", label: "Results", icon: Award, path: "/dashboard/results" },
+      { id: "overview", label: "Overview", icon: BarChart3, path: "/dashboard" },
+      { id: "exams", label: "Exams", icon: FileText, path: "/dashboard/exams" },
+      { id: "students", label: "Students", icon: Users, path: "/dashboard/students" },
+      { id: "results", label: "Results", icon: Award, path: "/dashboard/results" },
     ]
   }
 ];
 
 const examinerSidebarGroups = [
-    {
-      group: "Main",
-      items: [
-        { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/dashboard/examiner" },
-      ]
-    },
-    {
-      group: "Management",
-      items: [
-        { id: "manage-exams", label: "Manage Exams", icon: FileText, path: "/dashboard/examiner/exams" },
-        { id: "question-bank", label: "Question Bank", icon: Database, path: "/dashboard/examiner/question-bank" },
-        { id: "examinees", label: "Examinees", icon: Users, path: "/dashboard/examiner/examinees" },
-      ]
-    },
-    {
-      group: "Analysis",
-      items: [
-         { id: "results", label: "Results & Grading", icon: Award, path: "/dashboard/examiner/results" },
-         { id: "analytics", label: "Analytics", icon: PieChart, path: "/dashboard/examiner/analytics" },
-         { id: "reports", label: "Reports", icon: FileOutput, path: "/dashboard/examiner/reports" },
-      ]
-    },
-    {
-      group: "System",
-      items: [
-         { id: "help", label: "Help & Support", icon: HelpCircle, path: "/dashboard/examiner/help" },
-      ]
-    }
+  {
+    group: "Main",
+    items: [
+      { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/dashboard/examiner" },
+    ]
+  },
+  {
+    group: "Management",
+    items: [
+      { id: "manage-exams", label: "Manage Exams", icon: FileText, path: "/dashboard/examiner/exams" },
+      { id: "forms", label: "Registration Forms", icon: FileText, path: "/dashboard/examiner/forms" },
+      { id: "question-bank", label: "Question Bank", icon: Database, path: "/dashboard/examiner/question-bank" },
+      { id: "examinees", label: "Examinees", icon: Users, path: "/dashboard/examiner/examinees" },
+    ]
+  },
+  {
+    group: "Analysis",
+    items: [
+      { id: "results", label: "Results & Grading", icon: Award, path: "/dashboard/examiner/results" },
+      { id: "analytics", label: "Analytics", icon: PieChart, path: "/dashboard/examiner/analytics" },
+      { id: "reports", label: "Reports", icon: FileOutput, path: "/dashboard/examiner/reports" },
+    ]
+  },
+  {
+    group: "System",
+    items: [
+      { id: "help", label: "Help & Support", icon: HelpCircle, path: "/dashboard/examiner/help" },
+    ]
+  }
 ];
 
 const orgAdminSidebarGroups = [
@@ -69,14 +70,14 @@ const orgAdminSidebarGroups = [
     group: "Main",
     items: [
       { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/dashboard/org-admin" },
-      { id: "teachers", label: "Teachers", icon: Users, path: "/dashboard/org-admin/teachers" },
+      { id: "teachers", label: "Examiners", icon: Users, path: "/dashboard/org-admin/examiners" },
       { id: "students", label: "Students", icon: Users, path: "/dashboard/org-admin/students" },
     ]
   },
   {
     group: "Settings",
     items: [
-       { id: "settings", label: "Settings", icon: Settings, path: "/dashboard/org-admin/settings" },
+      { id: "settings", label: "Settings", icon: Settings, path: "/dashboard/org-admin/settings" },
     ]
   }
 ];
@@ -150,8 +151,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <SidebarToggle />
               <SidebarContent>
                 <SidebarNav className="my-[80px]">
-                  {(pathname?.startsWith("/dashboard/examiner") 
-                    ? examinerSidebarGroups 
+                  {(pathname?.startsWith("/dashboard/examiner")
+                    ? examinerSidebarGroups
                     : pathname?.startsWith("/dashboard/org-admin")
                       ? orgAdminSidebarGroups
                       : sidebarItems
@@ -168,11 +169,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               <SidebarNavItem
                                 icon={item.icon}
                                 active={isActive}
-                                className={`hover:cursor-pointer transition-colors ${
-                                  isActive 
-                                    ? "bg-primary/10 text-primary font-medium hover:bg-primary/15" 
-                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                                }`}
+                                className={`hover:cursor-pointer transition-colors ${isActive
+                                  ? "bg-primary/10 text-primary font-medium hover:bg-primary/15"
+                                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                  }`}
                               >
                                 {item.label}
                               </SidebarNavItem>

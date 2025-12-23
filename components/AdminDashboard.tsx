@@ -47,15 +47,16 @@ export function AdminDashboard() {
 
   const loadData = async () => {
     if (user) {
-       try {
-         const fetchedExams = await examService.getExams();
-         setExams(fetchedExams);
-         setStudents(examService.getStudents());
-         const fetchedResults = await examService.getExamResults();
-         setResults(fetchedResults);
-       } catch (error) {
-         console.error("Failed to load data", error);
-       }
+      try {
+        const fetchedExams = await examService.getExams();
+        setExams(fetchedExams);
+        const fetchedStudents = await examService.getStudents();
+        setStudents(fetchedStudents);
+        const fetchedResults = await examService.getExamResults();
+        setResults(fetchedResults);
+      } catch (error) {
+        console.error("Failed to load data", error);
+      }
     }
   };
 

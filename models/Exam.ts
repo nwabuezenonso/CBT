@@ -14,6 +14,13 @@ const ExamSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  assignedClasses: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+  }],
+  assignedSubjects: [{
+    type: String,
+  }],
   organizationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Organization',

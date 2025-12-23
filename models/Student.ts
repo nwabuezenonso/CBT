@@ -35,6 +35,14 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  accessExpiresAt: {
+    type: Date,
+    required: false,
+  },
+  customData: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false,
+  },
   guardianEmail: {
     type: String,
     required: false,

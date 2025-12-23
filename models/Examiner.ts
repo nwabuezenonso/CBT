@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const TeacherSchema = new mongoose.Schema({
+const ExaminerSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -12,21 +12,22 @@ const TeacherSchema = new mongoose.Schema({
     ref: 'Organization',
     required: [true, 'Organization is required'],
   },
+  active: {
+    type: Boolean,
+    default: true,
+  },
   subjects: {
     type: [String],
     default: [],
-    // Examples: ['Mathematics', 'English', 'Physics']
   },
   employeeId: {
     type: String,
     required: false,
-    // Organization-specific employee ID
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Creator is required'],
-    // The org admin who created this teacher account
+    required: true,
   },
   createdAt: {
     type: Date,
@@ -39,13 +40,13 @@ const TeacherSchema = new mongoose.Schema({
 });
 
 // Update timestamp on save
-TeacherSchema.pre('save', function (next) {
+ExaminerSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
 // Index for faster queries
-TeacherSchema.index({ organizationId: 1 });
-TeacherSchema.index({ userId: 1 });
+ExaminerSchema.index({ organizationId: 1 });
+ExaminerSchema.index({ userId: 1 });
 
-export default mongoose.models.Teacher || mongoose.model('Teacher', TeacherSchema);
+export default mongoose.models.Examiner || mongoose.model('Examiner', ExaminerSchema);

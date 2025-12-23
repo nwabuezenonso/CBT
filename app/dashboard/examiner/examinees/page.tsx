@@ -7,10 +7,12 @@ import { examService, type Exam } from "@/services/examService";
 import { toast } from "sonner";
 
 interface Student {
-    id: string;
-    name: string;
-    email: string;
-    registeredAt: string;
+  id: string;
+  name: string;
+  email: string;
+  registeredAt: string;
+  status?: string;
+  className?: string;
 }
 
 export default function ExamineesPage() {
@@ -22,31 +24,15 @@ export default function ExamineesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [forms, fetchedExams, fetchedAssignments] = await Promise.all([
-        registrationService.getRegistrationForms(),
+      const [fetchedStudents, fetchedExams, fetchedAssignments] = await Promise.all([
+        examService.getStudents(),
         examService.getExams(),
         examService.getStudentAssignments()
       ]);
 
       setExams(fetchedExams);
       setAssignments(fetchedAssignments);
-
-      // Aggregate students from all registration forms' responses
-      const aggregatedStudents: Student[] = [];
-      forms.forEach(form => {
-        if (form.responses) {
-            form.responses.forEach(response => {
-                aggregatedStudents.push({
-                    id: response.id || (response as any)._id || "unknown",
-                    name: response.studentName,
-                    email: response.studentEmail,
-                    registeredAt: response.submittedAt
-                });
-            });
-        }
-      });
-      
-      setStudents(aggregatedStudents);
+      setStudents(fetchedStudents as any); // Type assertion needed due to local vs imported interface mismatch if any
 
     } catch (error) {
       console.error("Failed to fetch data", error);
@@ -61,15 +47,15 @@ export default function ExamineesPage() {
   }, []);
 
   if (loading) {
-      return <div className="p-8 text-center text-muted-foreground">Loading examinees...</div>;
+    return <div className="p-8 text-center text-muted-foreground">Loading examinees...</div>;
   }
 
   return (
-      <ExamineeManagement 
-          students={students} 
-          exams={exams} 
-          assignments={assignments}
-          onRefresh={fetchData} 
-      />
+    <ExamineeManagement
+      students={students}
+      exams={exams}
+      assignments={assignments}
+      onRefresh={fetchData}
+    />
   );
 }

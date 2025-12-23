@@ -16,11 +16,12 @@ const StudentManagementPage = () => {
       try {
         const fetchedExams = await examService.getExams();
         setExams(fetchedExams);
-        setStudents(examService.getStudents());
+        const fetchedStudents = await examService.getStudents();
+        setStudents(fetchedStudents);
         const fetchedResults = await examService.getExamResults();
         setResults(fetchedResults);
       } catch (error) {
-         console.error(error);
+        console.error(error);
       }
     }
   };

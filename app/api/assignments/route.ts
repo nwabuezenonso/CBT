@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import ExamAssignment from '@/models/ExamAssignment';
 import Class from '@/models/Class';
+import '@/models/Exam'; // Register Exam model for populate
 import { verifyToken } from '@/lib/auth';
 
 // POST /api/assignments - Assign exam to class
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    
+
     // Auth Check
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     // Verify Class ownership/organization
     const classData = await Class.findOne({ _id: classId, organizationId: decoded.organizationId });
     if (!classData) {
-       return NextResponse.json({ message: 'Invalid Class' }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid Class' }, { status: 400 });
     }
 
     const assignment = await ExamAssignment.create({
@@ -36,15 +37,15 @@ export async function POST(req: Request) {
       assignedBy: decoded.userId,
       startTime,
       endTime,
-      status: 'SCHEDULED' 
+      status: 'SCHEDULED'
     });
 
     assignment.updateStatus();
     await assignment.save();
 
-    return NextResponse.json({ 
-      message: 'Exam assigned successfully', 
-      assignmentId: assignment._id 
+    return NextResponse.json({
+      message: 'Exam assigned successfully',
+      assignmentId: assignment._id
     }, { status: 201 });
 
   } catch (error: any) {
@@ -69,15 +70,15 @@ export async function GET(req: Request) {
 
     const orgClasses = await Class.find({ organizationId: decoded.organizationId }).select('_id');
     const orgClassIds = orgClasses.map(c => c._id);
-    
+
     const query: any = { classId: { $in: orgClassIds } };
-    
+
     if (examId) query.examId = examId;
     if (classId) {
-        if (!orgClassIds.some(id => id.toString() === classId)) {
-             return NextResponse.json([]); 
-        }
-        query.classId = classId; 
+      if (!orgClassIds.some(id => id.toString() === classId)) {
+        return NextResponse.json([]);
+      }
+      query.classId = classId;
     }
 
     const assignments = await ExamAssignment.find(query)

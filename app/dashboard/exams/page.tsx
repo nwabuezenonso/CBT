@@ -13,12 +13,13 @@ export default function ExamManagementPage() {
 
   const refreshData = async () => {
     if (user) {
-      const [fetchedExams, fetchedResults] = await Promise.all([
+      const [fetchedExams, fetchedResults, fetchedStudents] = await Promise.all([
         examService.getExams(),
-        examService.getExamResults()
+        examService.getExamResults(),
+        examService.getStudents()
       ]);
       setExams(fetchedExams);
-      setStudents(examService.getStudents());
+      setStudents(fetchedStudents as Student[]);
       setResults(fetchedResults);
     }
   };

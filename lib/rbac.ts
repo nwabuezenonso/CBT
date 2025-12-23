@@ -2,11 +2,12 @@
  * Role-Based Access Control (RBAC) utilities
  */
 
-export type UserRole = 'SUPER_ADMIN' | 'ORG_ADMIN' | 'TEACHER' | 'STUDENT';
+export type UserRole = 'SUPER_ADMIN' | 'ORG_ADMIN' | 'EXAMINER' | 'STUDENT';
 
 export type Permission =
   | 'manage:organizations'
-  | 'manage:teachers'
+  | 'manage:teachers' // Keeping for backward compatibility or rename if strictly needed, but let's stick to key rename for now. Actually, let's rename the permission too if it makes sense, but permissions might be used in strings. Let's start with Role name.
+  | 'manage:examiners' // Renamed from manage:teachers
   | 'manage:students'
   | 'manage:classes'
   | 'approve:students'
@@ -22,7 +23,7 @@ export type Permission =
 const rolePermissions: Record<UserRole, Permission[]> = {
   SUPER_ADMIN: [
     'manage:organizations',
-    'manage:teachers',
+    'manage:examiners',
     'manage:students',
     'manage:classes',
     'approve:students',
@@ -32,13 +33,13 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'manage:questions',
   ],
   ORG_ADMIN: [
-    'manage:teachers',
+    'manage:examiners',
     'manage:students',
     'manage:classes',
     'approve:students',
     'view:results',
   ],
-  TEACHER: [
+  EXAMINER: [
     'create:exams',
     'assign:exams',
     'view:results',

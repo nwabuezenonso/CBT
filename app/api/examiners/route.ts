@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
-import Teacher from '@/models/Teacher';
+import Examiner from '@/models/Examiner';
 
-// POST /api/teachers - Create a new teacher account (Org Admin only)
+// POST /api/examiners - Create a new examiner account (Org Admin only)
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    
-    const { 
-      name, 
-      email, 
-      password, 
-      organizationId, 
-      subjects, 
+
+    const {
+      name,
+      email,
+      password,
+      organizationId,
+      subjects,
       employeeId,
       phone,
-      createdBy 
+      createdBy
     } = await req.json();
 
     if (!name || !email || !password || !organizationId || !createdBy) {
@@ -35,19 +35,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create user account with TEACHER role and ACTIVE status
+    // Create user account with EXAMINER role and ACTIVE status
     const user = await User.create({
       name,
       email,
       password,
-      role: 'TEACHER',
+      role: 'EXAMINER',
       organizationId,
-      status: 'ACTIVE', // Teachers are auto-approved when created by org admin
+      status: 'ACTIVE', // Examiners are auto-approved when created by org admin
       phone,
     });
 
-    // Create teacher profile
-    const teacher = await Teacher.create({
+    // Create examiner profile
+    const examiner = await Examiner.create({
       userId: user._id,
       organizationId,
       subjects: subjects || [],
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       {
-        message: 'Teacher account created successfully',
+        message: 'Examiner account created successfully',
         user: {
           _id: user._id,
           name: user.name,
@@ -65,10 +65,10 @@ export async function POST(req: Request) {
           role: user.role,
           status: user.status,
         },
-        teacher: {
-          _id: teacher._id,
-          subjects: teacher.subjects,
-          employeeId: teacher.employeeId,
+        examiner: {
+          _id: examiner._id,
+          subjects: examiner.subjects,
+          employeeId: examiner.employeeId,
         },
       },
       { status: 201 }
@@ -81,11 +81,11 @@ export async function POST(req: Request) {
   }
 }
 
-// GET /api/teachers - List teachers in an organization
+// GET /api/examiners - List examiners in an organization
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    
+
     const { searchParams } = new URL(req.url);
     const organizationId = searchParams.get('organizationId');
 
@@ -96,12 +96,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const teachers = await Teacher.find({ organizationId })
+    const examiners = await Examiner.find({ organizationId })
       .populate('userId', 'name email phone status')
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 });
 
-    return NextResponse.json(teachers, { status: 200 });
+    return NextResponse.json(examiners, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { message: error.message },

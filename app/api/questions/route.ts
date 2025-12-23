@@ -10,11 +10,11 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    
+
     // Auth check
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    
+
     const decoded = verifyToken(token);
     if (!decoded || !decoded.organizationId) {
       return NextResponse.json({ message: 'Unauthorized or invalid organization' }, { status: 401 });
@@ -27,11 +27,11 @@ export async function GET(req: Request) {
 
     const query: any = { organizationId: decoded.organizationId };
 
-    // If user is a teacher/examiner, only show their own questions
-    if (decoded.role === 'TEACHER' || decoded.role === 'examiner') {
+    // If user is a examiner, only show their own questions
+    if (decoded.role === 'EXAMINER' || decoded.role === 'examiner') {
       query.createdBy = decoded.userId;
     }
-    
+
     if (subject) query.subject = subject;
     if (topic) query.topic = topic;
     if (difficulty) query.difficulty = difficulty;
@@ -100,9 +100,9 @@ export async function POST(req: Request) {
 
     await Promise.all(optionPromises);
 
-    return NextResponse.json({ 
-      message: 'Question created successfully', 
-      questionId: question._id 
+    return NextResponse.json({
+      message: 'Question created successfully',
+      questionId: question._id
     }, { status: 201 });
 
   } catch (error: any) {

@@ -16,7 +16,10 @@ export async function getExams(): Promise<{ success: boolean; data?: ExamType[];
       ...exam,
       id: exam._id.toString(),
       _id: exam._id.toString(),
-      examinerId: exam.examinerId.toString(),
+      examinerId: exam.createdBy ? exam.createdBy.toString() : (exam.examinerId ? exam.examinerId.toString() : ''),
+      createdBy: exam.createdBy ? exam.createdBy.toString() : undefined, // Explicitly stringify createdBy to avoid serialization error
+      organizationId: exam.organizationId ? exam.organizationId.toString() : undefined,
+      assignedClasses: exam.assignedClasses ? exam.assignedClasses.map((id: any) => id.toString()) : [],
       questions: exam.questions?.map((q: any) => ({
         ...q,
         id: q._id ? q._id.toString() : undefined,
@@ -24,6 +27,7 @@ export async function getExams(): Promise<{ success: boolean; data?: ExamType[];
       })) || [],
       scheduledDate: exam.scheduledDate ? exam.scheduledDate.toISOString() : undefined,
       createdAt: exam.createdAt ? exam.createdAt.toISOString() : undefined,
+      updatedAt: exam.updatedAt ? exam.updatedAt.toISOString() : undefined,
       totalPoints: exam.questions?.reduce((sum: number, q: any) => sum + (q.points || 1), 0) || 0
     }));
 

@@ -18,7 +18,6 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload | null>
   try {
     const secret = new TextEncoder().encode(JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    console.log('[verifyTokenEdge] Token verified successfully:', payload);
     return payload as unknown as JWTPayload;
   } catch (error) {
     console.error('[verifyTokenEdge] Token verification failed:', error);

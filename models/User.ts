@@ -19,13 +19,13 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['SUPER_ADMIN', 'ORG_ADMIN', 'TEACHER', 'STUDENT'],
+    enum: ['SUPER_ADMIN', 'ORG_ADMIN', 'EXAMINER', 'STUDENT'],
     default: 'STUDENT',
   },
   organizationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Organization',
-    required: function() {
+    required: function () {
       // Super admins don't need organization
       return this.role !== 'SUPER_ADMIN';
     },

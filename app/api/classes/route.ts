@@ -9,10 +9,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    
+
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    
+
     const decoded = verifyToken(token);
     if (!decoded || !decoded.organizationId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -23,13 +23,13 @@ export async function GET(req: Request) {
 
     // Ensure user accesses their own organization's data
     if (organizationId && organizationId !== decoded.organizationId && decoded.role !== 'SUPER_ADMIN') {
-        return NextResponse.json({ message: 'Unauthorized access to organization data' }, { status: 403 });
+      return NextResponse.json({ message: 'Unauthorized access to organization data' }, { status: 403 });
     }
 
     const query: any = { organizationId: decoded.organizationId };
 
-    // If user is a teacher/examiner, only show their own classes
-    if (decoded.role === 'TEACHER' || decoded.role === 'examiner') {
+    // If user is a examiner, only show their own classes
+    if (decoded.role === 'EXAMINER' || decoded.role === 'examiner') {
       query.createdBy = decoded.userId;
     }
 
@@ -50,10 +50,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    
+
     const token = req.headers.get('cookie')?.split('token=')[1]?.split(';')[0];
     if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    
+
     const decoded = verifyToken(token);
     if (!decoded || !decoded.organizationId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

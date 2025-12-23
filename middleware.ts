@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
 
   // Public routes that don't require authentication
   const publicRoutes = ['/auth/login', '/auth/register', '/'];
-  
+
   if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/api')) {
     // Skip auth check for public API routes and auth endpoints that handle their own verification
     if (
-      pathname.startsWith('/api/auth/login') || 
+      pathname.startsWith('/api/auth/login') ||
       pathname.startsWith('/api/auth/register') ||
       pathname.startsWith('/api/auth/me') ||
       pathname.startsWith('/api/auth/logout') ||
@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       const decoded = await verifyTokenEdge(token);
-      
+
       // Handle invalid token
       if (!decoded) {
         console.log('[Middleware] Token verification failed for path:', pathname);
@@ -55,9 +55,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/auth/login', request.url));
       }
 
-      console.log('[Middleware] Token verified successfully. User:', decoded.userId, 'Role:', decoded.role, 'Status:', decoded.status);
-
-      
       // Block PENDING users from accessing protected routes
       if (decoded.status === 'PENDING') {
         if (pathname.startsWith('/api')) {
@@ -112,9 +109,9 @@ export async function middleware(request: NextRequest) {
       }
 
       // Teacher/Examiner routes
-      if (pathname.startsWith('/dashboard/examiner') && !['SUPER_ADMIN', 'ORG_ADMIN', 'TEACHER'].includes(role)) {
+      if (pathname.startsWith('/dashboard/examiner') && !['SUPER_ADMIN', 'ORG_ADMIN', 'EXAMINER'].includes(role)) {
         return NextResponse.json(
-          { message: 'Access denied. Teacher only.' },
+          { message: 'Access denied. Examiner only.' },
           { status: 403 }
         );
       }
@@ -132,7 +129,7 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-user-id', decoded.userId);
       response.headers.set('x-user-role', decoded.role);
       response.headers.set('x-user-org', decoded.organizationId || '');
-      
+
       return response;
     } catch (error) {
       if (pathname.startsWith('/api')) {
